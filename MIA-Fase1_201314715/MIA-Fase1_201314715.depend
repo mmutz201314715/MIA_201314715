@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1470336677 source:/home/mario/MIA/FASE1/MIA_201314715/MIA-Fase1_201314715/main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
