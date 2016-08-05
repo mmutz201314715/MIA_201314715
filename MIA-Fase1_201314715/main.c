@@ -146,11 +146,11 @@ int crearDisco(char * cadena){
                 }
                 break;
             case 6:
-                if(strcasecmp("k",spliteo)){
+                if(strcasecmp("k",spliteo)==0){
                     //crear e kilos
                     unit = 'k';
 
-                }else if(strcasecmp("m",spliteo)){
+                }else if(strcasecmp("m",spliteo)==0){
                     //crear en megas
                     unit  = 'm';
                 }else{
@@ -202,24 +202,24 @@ int crearDisco(char * cadena){
 
                          CreateFolder(path);
                          archivo = fopen(buffer2,"wb+");
-                         char relleno[size*kb];
-                         int i;
+                         char relleno = 0;
+                         long i;
                          for(i = 0; i<(size*kb);i++){
-                             relleno[i]=0;
+                             fwrite(&relleno,sizeof(char),1,archivo);
                          }
-                         fwrite(relleno,1,(size*kb),archivo);
+
                          fclose(archivo);
 
                        }else if(unit == 'm'){
 
                            CreateFolder(path);
                            archivo = fopen(buffer2,"wb+");
-                           char relleno[size*mb];
-                           int i;
+                           char relleno = 0;
+                           long i;
                            for(i = 0; i<(size*mb);i++){
-                               relleno[i]=0;
+                               fwrite(&relleno,sizeof(char),1,archivo);
                            }
-                           fwrite(relleno,1,(size*mb),archivo);
+
                            fclose(archivo);
                        }
 
@@ -227,12 +227,12 @@ int crearDisco(char * cadena){
                        //creacion por default en MiB
                        CreateFolder(path);
                        archivo = fopen(buffer2,"wb+");
-                       char relleno[size*mb];
-                       int i;
+                       char relleno = 0;
+                       long i;
                        for(i = 0; i<(size*mb);i++){
-                           relleno[i]=0;
+                           fwrite(&relleno,sizeof(char),1,archivo);
                        }
-                       fwrite(relleno,1,(size*mb),archivo);
+
                        fclose(archivo);
                    }
 
@@ -282,20 +282,6 @@ int main(void)
 
   analizar(cadena , 500, 0);
 
-
-FILE* archivo;
-archivo = fopen("tester.dsk","wb+");
-int size = 25;
-printf("break\n");
-char relleno[size*mb];
-long i;
-printf("break\n");
-for(i = 0; i<(size*mb);i++){
-    relleno[i]=0;
-}
-printf("break\n");
-fwrite(relleno,1,(size*mb),archivo);
-fclose(archivo);
 
 
     return 0;
