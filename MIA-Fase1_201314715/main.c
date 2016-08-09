@@ -4,14 +4,40 @@
 #define kb 1024
 #define mb 1048576
 
+/*****estructuras o tablas *******/
+//particion:  puede ser primaria o extendida
+typedef struct particion{
+   char part_status;// Char Indica si la partición está activa o no
+   char part_type; //Char Indica el tipo de partición, primaria o extendida. Tendrá los valores P o E
+   char part_fit; //Char Tipo de ajuste de la partición. Tendrá los valores BF (Best), FF (First) o WF (worst)
+   int part_start ;//Int Indica en qué byte del disco inicia la partición
+   int part_size;// Int Contiene el tamaño total de la partición en bytes.
+   char part_name[16];// char[16] Nombre de la partición
+}partition;
+
+//MBR
+
+typedef struct mbr{
+int mbr_tamano;
+//int Tamaño total del disco en bytes
+char *mbr_fecha_creacion; //time Fecha y hora de creación del disco
+int mbr_disk_signature; //int Número random, que identificará de forma única a cada disco
+ partition mbr_partition_1; //partition Estructura con información de la partición 1
+ partition mbr_partition_2; //partition Estructura con información de la partición 2
+ partition mbr_partition_3; //partition Estructura con información de la partición 3
+ partition mbr_partition_4; //partition Estructura con información de la partición 4
+}MBR;
+
+
+
 /*****lista de funciones y procedimientos a utilizar*/
 int crearDisco(char *cadena);
 void CreateFolder(char * path);
-int analizar(char * cad, int n, int process);
+int analizar(char * cad, int n);
 
 
 /****ANALIZADOR******/
-int analizar(char * cad, int n, int process){
+int analizar(char * cad, int n){
 int estado  = 0;
 
     /***LECTURA DE CADENA**/
@@ -89,8 +115,8 @@ int crearDisco(char * cadena){
     char unit='\0';
     char path[100];
     char name[100];
-   // path[0] = '\0';
-    //name[0]='\0';
+    path[0] = '\0';
+    name[0]='\0';
     int estado=0;
     int tam;
     char * spliteo;
@@ -169,11 +195,13 @@ int crearDisco(char * cadena){
                 for(tam =0; spliteo[tam]!='\0';tam++){
 
                 }
-                if(tam>5){
-                    if(spliteo[tam-3]=='d' && spliteo[tam-2]=='s'&& spliteo[tam-1]=='k'){
-                      //
+                if(tam>4){
+                    if(spliteo[tam-4]=='.'&& spliteo[tam-3]=='d' && spliteo[tam-2]=='s'&& spliteo[tam-1]=='k'){
+
                         strcpy(name,spliteo);
 
+                    }else{
+                        printf("el nombre del disco no posee extension\n");
                     }
                 }
                 break;
@@ -202,7 +230,7 @@ int crearDisco(char * cadena){
 
                          CreateFolder(path);
                          archivo = fopen(buffer2,"wb+");
-                         char relleno = 0;
+                         char relleno = '\0';
                          long i;
                          for(i = 0; i<(size*kb);i++){
                              fwrite(&relleno,sizeof(char),1,archivo);
@@ -214,7 +242,7 @@ int crearDisco(char * cadena){
 
                            CreateFolder(path);
                            archivo = fopen(buffer2,"wb+");
-                           char relleno = 0;
+                           char relleno = '\0';
                            long i;
                            for(i = 0; i<(size*mb);i++){
                                fwrite(&relleno,sizeof(char),1,archivo);
@@ -227,7 +255,7 @@ int crearDisco(char * cadena){
                        //creacion por default en MiB
                        CreateFolder(path);
                        archivo = fopen(buffer2,"wb+");
-                       char relleno = 0;
+                       char relleno = '\0';
                        long i;
                        for(i = 0; i<(size*mb);i++){
                            fwrite(&relleno,sizeof(char),1,archivo);
@@ -249,15 +277,6 @@ int crearDisco(char * cadena){
            printf("path del disco no esta especificado\n");
        }
 
-/*
-        int tam;
-
-        for(tam =0; cad[tam]!='\0';tam++){
-
-        }
-
-        printf("el espacio ocupado es: %d y el ultimo caracter es %c\n",tam, cad[tam-1]);
-*/
 return 1;
 }
 //desde script
@@ -280,7 +299,7 @@ int main(void)
 
 
 
-  analizar(cadena , 500, 0);
+  analizar(cadena , 500);
 
 
 
