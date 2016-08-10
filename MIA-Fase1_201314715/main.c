@@ -140,7 +140,8 @@ int fDisk(char * cadena){
     fit[0]='\0';
     name[0] = '\0';
 char * spliteo, *split2;
-char aux1[100];
+char aux1[100], aux2[100], buffer[100];
+int bandera = 0;
     spliteo = strtok(cadena, " ");
 
     while(spliteo!= NULL){
@@ -152,7 +153,7 @@ char aux1[100];
 
         }else if(strcasecmp("+unit::", spliteo)==0){
             estado = 2;
-        }else if(strcasecmp("-path::", spliteo)){
+        }else if(strcasecmp("-path::", spliteo)==0){
             estado = 3;
         }else if(strcasecmp("+type::", spliteo)==0){
             estado = 4;
@@ -224,14 +225,20 @@ char aux1[100];
             for(tam =0; spliteo[tam]!='\0';tam++){
 
             }
-            if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+            if(spliteo[tam-1]=='"'){
+                //el paramtro no posee espacios
+                printf("comilla\n");
+                if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
-                    strcpy(path,spliteo);
-
-                }else{
-                    printf("el nombre del disco no posee extension\n");
+                 strcpy(path,spliteo);
+                 bandera = 1;
+                 estado = 0;
                 }
-             estado = 0;
+            }else{
+                //viene un espacio
+                strcpy(path,spliteo);
+                estado =17;
+            }
             break;
         case 12:
             if(strcasecmp("P",spliteo)==0){
@@ -295,6 +302,27 @@ char aux1[100];
         case 16:
             add = atoi(spliteo);
             break;
+        case 17:
+
+            strcpy(aux2, spliteo);
+              snprintf(buffer, sizeof(buffer), "%s %s", path, aux2);
+              strcpy(path, buffer);
+
+              for(tam =0; spliteo[tam]!='\0';tam++){
+
+              }
+              if(spliteo[tam-1]=='\"'){
+                                    //el paramtro no posee espacios
+                                    printf("comilla\n");
+                                    if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+
+                                     bandera = 1;
+                                     estado = 0;
+                                    }
+                                    }else{
+                                        estado =17;
+                                    }
+            break;
         default:
             break;
         }
@@ -302,11 +330,13 @@ char aux1[100];
         spliteo = strtok(NULL, " \n");
     }
 
-    if(path[0]!='\0'){
+    printf("%s\n",path);
+    if(path[0]!='\0' && bandera == 1){
         strcpy(aux1 , path);
         split2 = strtok(aux1, "\"");
         strcpy(path,split2);
 
+        printf("si entro \n");
 
     }else{
         printf("no se especifico el path del disco\n");
@@ -387,7 +417,7 @@ int elimDisco(char * cadena){
                                             estado =3;
                                         }
 
-                      //viene un espacio
+
 
 
                break;
