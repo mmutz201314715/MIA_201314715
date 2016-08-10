@@ -21,7 +21,7 @@ typedef struct particion{
 typedef struct mbr{
 int mbr_tamano;
 //int Tamaño total del disco en bytes
-char mbr_fecha_creacion[10]; //time Fecha y hora de creación del disco
+char mbr_fecha_creacion[15]; //time Fecha y hora de creación del disco
 int mbr_disk_signature; //int Número random, que identificará de forma única a cada disco
  partition mbr_partition_1; //partition Estructura con información de la partición 1
  partition mbr_partition_2; //partition Estructura con información de la partición 2
@@ -36,7 +36,7 @@ int crearDisco(char *cadena);
 void CreateFolder(char * path);
 int analizar(char * cad, int n);
 void insert_mbr(char *fname, int size);
-
+int elimDisco(char * cadena);
 /****ANALIZADOR******/
 int analizar(char * cad, int n){
 int estado  = 0;
@@ -83,6 +83,8 @@ spliteo = strtok(cad, " ");
            estado = 0;
        }else if(strcasecmp("mkdisk", spliteo)==0){
            estado = 1;
+       }else if(strcasecmp("rmdisk", spliteo)==0){
+           estado = 2;
        }
        else{
            //errores de escritura
@@ -99,6 +101,9 @@ spliteo = strtok(cad, " ");
            printf("comando mkdisk\n");
            crearDisco(entrada);
            break;
+       case 2:
+           printf("comando rmdisk\n");
+           elimDisco(entrada);
        default:
           //error
            printf("error comando no valido\n");
@@ -107,6 +112,76 @@ spliteo = strtok(cad, " ");
 
        return 1;
 
+}
+/******ELIMINAR DISCO**********/
+
+int elimDisco(char * cadena){
+
+    char path[100];
+    char desic = '\0';
+    path[0] = '\0';
+    int estado = 0;
+    int tam;
+    char * spliteo;
+    char * split2;
+        spliteo = strtok(cadena, " ");
+        while (spliteo != NULL){
+           if(strcasecmp("rmdisk", spliteo)==0){
+               //confirmar que si se recibio el comando rmdisk
+               estado = 0;
+           }else if(strcasecmp("-path::", spliteo)==0){
+               estado = 1;
+           }
+
+           switch (estado) {
+           case 0:
+               //no hacer nada
+               break;
+           case 1:
+               estado = 2;
+               break;
+           case 2:
+
+               split2 = strtok(spliteo, "\"");
+              printf("%s\neste es el resultado\n",split2);
+              for(tam =0; spliteo[tam]!='\0';tam++){
+
+              }
+             if(spliteo[tam-4]=='.'&& spliteo[tam-3]=='d' && spliteo[tam-2]=='s'&& spliteo[tam-1]=='k'){
+
+              strcpy(path,split2);
+             }
+              estado = 0;
+           default:
+               break;
+           }
+
+
+        spliteo = strtok(NULL, " \n");
+        }
+
+        //verificar que si haya introducido un path
+       if(path[0]!='\0'){
+
+           printf("Esta seguro de eliminar el disco : 1. Si / cualquier letra. No\n");
+           scanf("%s",&desic);
+
+           if(desic =='1'){
+               int i =remove(path);
+              if(i==0){
+                  printf("Se ha eliminado el disco exitosamente\n");
+              }else{
+                  printf("ERROR, imposible borrar el archivo\n");
+              }
+           }else{
+               printf("Se ha cancelado la operacion de eliminar un disco\n");
+           }
+
+       }else{
+           printf("no se especifico el path a eliminar\n");
+       }
+
+    return 1;
 }
 
 /*****CREAR DISCO******/
@@ -121,7 +196,10 @@ int crearDisco(char * cadena){
     int estado=0;
     int tam;
     char * spliteo;
-
+    char aux1[101];
+    char aux2[101];
+    char *split2;
+    char *split3;
         spliteo = strtok(cadena, " ");
         while (spliteo != NULL)
         {
@@ -171,6 +249,7 @@ int crearDisco(char * cadena){
                 if(size <0){
                     printf("el tamanio del disco debe de ser mayor a 0 kB\n");
                 }
+                estado = 0;
                 break;
             case 6:
                 if(strcasecmp("k",spliteo)==0){
@@ -185,19 +264,26 @@ int crearDisco(char * cadena){
                     printf("caracter de unidades invalido\n");
 
                 }
+                estado = 0;
                 break;
             case 7:
+            /*strcpy(aux1, spliteo);
+                split2 = strtok(aux1, "\"");
+                printf("path: %s\n", split2);*/
                strcpy(path,spliteo);
 
+                estado = 0;
                 break;
             case 8:
 
-
+               /* strcpy(aux2,spliteo);
+                split3 = strtok(aux2, "\"");
+                printf("nombre: %s\n", split3);*/
                 for(tam =0; spliteo[tam]!='\0';tam++){
 
                 }
-                if(tam>4){
-                    if(spliteo[tam-4]=='.'&& spliteo[tam-3]=='d' && spliteo[tam-2]=='s'&& spliteo[tam-1]=='k'){
+                if(tam>5){
+                    if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                         strcpy(name,spliteo);
 
@@ -205,6 +291,8 @@ int crearDisco(char * cadena){
                         printf("el nombre del disco no posee extension\n");
                     }
                 }
+
+                estado = 0;
                 break;
             default:
                 //error o fin
@@ -212,17 +300,25 @@ int crearDisco(char * cadena){
                 break;
             }
         //toma el siguiente token
+        printf("split: %s\n",spliteo);
         spliteo = strtok(NULL, " \n");
         }
 
         //verificar que si haya introducido un path
        if(path[0]!='\0'){
-
+            strcpy(aux1 , path);
+            split2 = strtok(aux1, "\"");
+            strcpy(path,split2);
            if(name[0]!='\0'){
                if(size>0){
+
+                   strcpy(aux2,name);
+                   split3 = strtok(aux2, "\"");
+                   strcpy(name, split3);
+
                    FILE* archivo;
                    char buffer2[200];
-                   snprintf(buffer2, sizeof(buffer2), "%s/%s", path,name);
+                   snprintf(buffer2, sizeof(buffer2), "%s%s", path,name);
                     printf("%s",buffer2);
                    if(unit!='\0'){
 
@@ -304,11 +400,11 @@ void insert_mbr(char *fname, int size){
 
     time_t t;
       struct tm *tm;
-      char fechayhora[10];
+      char fechayhora[15];
 
       t=time(NULL);
       tm=localtime(&t);
-      strftime(fechayhora, 10, "%d/%m/%Y", tm);
+      strftime(fechayhora, 15, "%d/%m/%Y", tm);
       printf ("Hoy es: %s\n", fechayhora);
 
       part1.part_status = 'i';
