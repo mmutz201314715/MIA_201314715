@@ -395,7 +395,7 @@ void CreateFolder(char * path)
 
 //procedimiento para insertar el mbr en el disco creado
 void insert_mbr(char *fname, int size){
-    MBR nmbr;
+    MBR nmbr, aux;
     partition part1, part2 , part3, part4;
 
     time_t t;
@@ -423,11 +423,20 @@ void insert_mbr(char *fname, int size){
 
      if(fichero){
               fseek(fichero,0,SEEK_SET);
-               fwrite(&nmbr, sizeof(nmbr),0,fichero);
+               fwrite(&nmbr, sizeof(MBR),1,fichero);
+
+
+               //leer el archivo
+               fseek(fichero,0,SEEK_SET);
+               fread(&aux,sizeof(MBR),1,fichero);
+
+               printf("la fecha del mbr es: %s\n", aux.mbr_fecha_creacion);
+
                fclose(fichero);
          }
 
 }
+
 
 int main(void)
 {
