@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #define kb 1024
 #define mb 1048576
 
@@ -20,7 +21,7 @@ typedef struct particion{
 typedef struct mbr{
 int mbr_tamano;
 //int Tamaño total del disco en bytes
-char *mbr_fecha_creacion; //time Fecha y hora de creación del disco
+char mbr_fecha_creacion[10]; //time Fecha y hora de creación del disco
 int mbr_disk_signature; //int Número random, que identificará de forma única a cada disco
  partition mbr_partition_1; //partition Estructura con información de la partición 1
  partition mbr_partition_2; //partition Estructura con información de la partición 2
@@ -34,7 +35,7 @@ int mbr_disk_signature; //int Número random, que identificará de forma única 
 int crearDisco(char *cadena);
 void CreateFolder(char * path);
 int analizar(char * cad, int n);
-
+void insert_mbr(char *fname, int size);
 
 /****ANALIZADOR******/
 int analizar(char * cad, int n){
@@ -237,6 +238,7 @@ int crearDisco(char * cadena){
                          }
 
                          fclose(archivo);
+                         insert_mbr(buffer2, size*kb);
 
                        }else if(unit == 'm'){
 
@@ -249,6 +251,7 @@ int crearDisco(char * cadena){
                            }
 
                            fclose(archivo);
+                           insert_mbr(buffer2, size*mb);
                        }
 
                    }else{
@@ -262,9 +265,13 @@ int crearDisco(char * cadena){
                        }
 
                        fclose(archivo);
+                       insert_mbr(buffer2, size*mb);
                    }
 
+
+
                }else{
+
 
                    printf("tamanio del archivo no esta especificado, size: %i\n",size);
 
@@ -288,12 +295,47 @@ void CreateFolder(char * path)
     snprintf(buffer2, sizeof(buffer2), "mkdir -p '%s'", path);
     system(buffer2);
 
+}
+
+//procedimiento para insertar el mbr en el disco creado
+void insert_mbr(char *fname, int size){
+    MBR nmbr;
+    partition part1, part2 , part3, part4;
+
+    time_t t;
+      struct tm *tm;
+      char fechayhora[10];
+
+      t=time(NULL);
+      tm=localtime(&t);
+      strftime(fechayhora, 10, "%d/%m/%Y", tm);
+      printf ("Hoy es: %s\n", fechayhora);
+
+      part1.part_status = 'i';
+      part2.part_status = 'i';
+      part3.part_status = 'i';
+      part4.part_status = 'i';
+
+      nmbr.mbr_partition_1 = part1;
+      nmbr.mbr_partition_2 = part2;
+      nmbr.mbr_partition_3 = part3;
+      nmbr.mbr_partition_4 = part4;
+
+    strcpy(nmbr.mbr_fecha_creacion, fechayhora);
+    nmbr.mbr_tamano = size;
+    FILE *fichero = fopen(fname , "rb+");
+
+     if(fichero){
+              fseek(fichero,0,SEEK_SET);
+               fwrite(&nmbr, sizeof(nmbr),0,fichero);
+               fclose(fichero);
+         }
 
 }
 
 int main(void)
 {
-    printf("Hello World!\n");
+    printf(":::::::::::::Bienvenido::::::::\n");
  char cadena[500];
 
 
