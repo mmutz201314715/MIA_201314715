@@ -80,6 +80,7 @@ spliteo = strtok(cad, " ");
 
        /*INGRESO AL AUTOMATA*/
  /*estado = 0*/
+
        if(spliteo[0]=='#'){
            estado = 0;
        }else if(strcasecmp("mkdisk", spliteo)==0){
@@ -107,6 +108,7 @@ spliteo = strtok(cad, " ");
        case 2:
            printf("comando rmdisk\n");
            elimDisco(entrada);
+           break;
        case 3:
            printf("comando fdisk\n");
            fDisk(entrada);
@@ -137,7 +139,8 @@ int fDisk(char * cadena){
     deldesic[0] = '\0';
     fit[0]='\0';
     name[0] = '\0';
-char * spliteo;
+char * spliteo, *split2;
+char aux1[100];
     spliteo = strtok(cadena, " ");
 
     while(spliteo!= NULL){
@@ -298,6 +301,18 @@ char * spliteo;
 
         spliteo = strtok(NULL, " \n");
     }
+
+    if(path[0]!='\0'){
+        strcpy(aux1 , path);
+        split2 = strtok(aux1, "\"");
+        strcpy(path,split2);
+
+
+    }else{
+        printf("no se especifico el path del disco\n");
+    }
+
+
 return 1;
 }
 
@@ -306,7 +321,10 @@ return 1;
 
 int elimDisco(char * cadena){
 
+    int bandera =0;
     char path[100];
+    char aux1[100];
+    char buffer[100];
     char desic = '\0';
     path[0] = '\0';
     int estado = 0;
@@ -330,28 +348,63 @@ int elimDisco(char * cadena){
                estado = 2;
                break;
            case 2:
+               for(tam =0; spliteo[tam]!='\0';tam++){
 
-               split2 = strtok(spliteo, "\"");
-              printf("%s\neste es el resultado\n",split2);
-              for(tam =0; spliteo[tam]!='\0';tam++){
+               }
+               if(spliteo[tam-1]=='"'){
+                   //el paramtro no posee espacios
+                   printf("comilla\n");
+                   if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
-              }
-             if(spliteo[tam-4]=='.'&& spliteo[tam-3]=='d' && spliteo[tam-2]=='s'&& spliteo[tam-1]=='k'){
+                    strcpy(path,spliteo);
+                    bandera = 1;
+                    estado = 0;
+                   }
+               }else{
+                   //viene un espacio
+                   strcpy(path,spliteo);
+                   estado =3;
+               }
+                break;
+           case 3:
 
-              strcpy(path,split2);
-             }
-              estado = 0;
+                strcpy(aux1, spliteo);
+                  snprintf(buffer, sizeof(buffer), "%s %s", path, aux1);
+                  strcpy(path, buffer);
+
+                  for(tam =0; spliteo[tam]!='\0';tam++){
+
+                  }
+                  if(spliteo[tam-1]=='\"'){
+                                        //el paramtro no posee espacios
+                                        printf("comilla\n");
+                                        if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+
+                                         bandera = 1;
+                                         estado = 0;
+                                        }
+                                        }else{
+                                            estado =3;
+                                        }
+
+                      //viene un espacio
+
+
+               break;
            default:
                break;
            }
 
 
         spliteo = strtok(NULL, " \n");
-        }
+}
 
+printf("%s\n", path);
         //verificar que si haya introducido un path
-       if(path[0]!='\0'){
-
+       if(path[0]!='\0' && bandera == 1){
+           strcpy(aux1 , path);
+           split2 = strtok(aux1, "\"");
+           strcpy(path,split2);
            printf("Esta seguro de eliminar el disco : 1. Si / cualquier letra. No\n");
            scanf("%s",&desic);
 
@@ -386,9 +439,11 @@ int crearDisco(char * cadena){
     int tam;
     char * spliteo;
     char aux1[101];
-    char aux2[101];
+    char aux2[101], aux3[100], aux4[100], buffer3[100], buffer[100];
     char *split2;
     char *split3;
+    int bandera1 = 0;
+    int bandera2 = 0;
         spliteo = strtok(cadena, " ");
         while (spliteo != NULL)
         {
@@ -456,32 +511,93 @@ int crearDisco(char * cadena){
                 estado = 0;
                 break;
             case 7:
-            /*strcpy(aux1, spliteo);
-                split2 = strtok(aux1, "\"");
-                printf("path: %s\n", split2);*/
-               strcpy(path,spliteo);
-
-                estado = 0;
-                break;
-            case 8:
-
-               /* strcpy(aux2,spliteo);
-                split3 = strtok(aux2, "\"");
-                printf("nombre: %s\n", split3);*/
                 for(tam =0; spliteo[tam]!='\0';tam++){
 
                 }
+                if(spliteo[tam-1]=='"'){
+                    //el paramtro no posee espacios
+                    printf("comilla\n");
+                    strcpy(path,spliteo);
+                    estado = 0;
+                    bandera1 = 1;
+                }else{
+                    strcpy(path,spliteo);
+                    estado = 9;
+                }
+
+
+
+                break;
+            case 8:
+
+
+                for(tam =0; spliteo[tam]!='\0';tam++){
+
+                }
+                if(spliteo[tam-1]=='"'){
                 if(tam>5){
                     if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                         strcpy(name,spliteo);
+                        bandera2 = 1;
+                        estado = 0;
 
                     }else{
                         printf("el nombre del disco no posee extension\n");
+                        estado = 0;
                     }
                 }
+                }else{
+                    strcpy(name, spliteo);
+                    estado = 10;
+                }
 
-                estado = 0;
+
+                break;
+            case 9:
+                strcpy(aux3, spliteo);
+                  snprintf(buffer, sizeof(buffer), "%s %s", path, aux3);
+                  strcpy(path, buffer);
+
+                  for(tam =0; spliteo[tam]!='\0';tam++){
+
+                  }
+                  if(spliteo[tam-1]=='\"'){
+                                        //el paramtro no posee espacios
+                                        printf("comilla\n");
+                                        bandera1 = 1;
+                                        estado = 0;
+
+                  }else{
+                      estado = 9;
+                  }
+
+                break;
+            case 10:
+                strcpy(aux4, spliteo);
+                  snprintf(buffer3, sizeof(buffer3), "%s %s", name, aux4);
+                  strcpy(name, buffer3);
+
+                  for(tam =0; spliteo[tam]!='\0';tam++){
+
+                  }
+                  if(spliteo[tam-1]=='"'){
+                  if(tam>5){
+                      if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+
+
+                          bandera2 = 1;
+                          estado = 0;
+
+                      }else{
+                          printf("el nombre del disco no posee extension\n");
+                          estado = 0;
+                      }
+                  }
+                  }else{
+
+                      estado = 10;
+                  }
                 break;
             default:
                 //error o fin
@@ -494,11 +610,11 @@ int crearDisco(char * cadena){
         }
 
         //verificar que si haya introducido un path
-       if(path[0]!='\0'){
+       if(path[0]!='\0' && bandera1 == 1){
             strcpy(aux1 , path);
             split2 = strtok(aux1, "\"");
             strcpy(path,split2);
-           if(name[0]!='\0'){
+           if(name[0]!='\0' && bandera2 == 1){
                if(size>0){
 
                    strcpy(aux2,name);
@@ -508,10 +624,10 @@ int crearDisco(char * cadena){
                    FILE* archivo;
                    char buffer2[200];
                    snprintf(buffer2, sizeof(buffer2), "%s%s", path,name);
-                    printf("%s",buffer2);
+                    printf("%s\n",buffer2);
                    if(unit!='\0'){
 
-                       if(unit=='k'){
+                       if(unit=='k' && size >= 10240){
                            //creacion KiB
 
                          CreateFolder(path);
@@ -525,7 +641,7 @@ int crearDisco(char * cadena){
                          fclose(archivo);
                          insert_mbr(buffer2, size*kb);
 
-                       }else if(unit == 'm'){
+                       }else if(unit == 'm' && size >=10){
 
                            CreateFolder(path);
                            archivo = fopen(buffer2,"wb+");
@@ -539,7 +655,7 @@ int crearDisco(char * cadena){
                            insert_mbr(buffer2, size*mb);
                        }
 
-                   }else{
+                   }else if(unit == '\0' && size>=10){
                        //creacion por default en MiB
                        CreateFolder(path);
                        archivo = fopen(buffer2,"wb+");
@@ -551,6 +667,9 @@ int crearDisco(char * cadena){
 
                        fclose(archivo);
                        insert_mbr(buffer2, size*mb);
+                   }else{
+
+                       printf("tamanio de disco demasiado pequeno, debe ser mayor a 10 MB\n");
                    }
 
 
