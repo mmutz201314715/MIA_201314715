@@ -20,8 +20,8 @@ typedef struct particion{
 
 typedef struct mbr{
 int mbr_tamano;//int Tamaño total del disco en bytes
-int eflag; //bandera utilizada para saber si existe una particion extendida
-int contp; //bandera utilizada para contar cuantas particiones se encuentran activas
+//int eflag; //bandera utilizada para saber si existe una particion extendida
+//int contp; //bandera utilizada para contar cuantas particiones se encuentran activas
 char mbr_fecha_creacion[15]; //time Fecha y hora de creación del disco
 int mbr_disk_signature; //int Número random, que identificará de forma única a cada disco
  partition mbr_partition_1; //partition Estructura con información de la partición 1
@@ -41,6 +41,7 @@ int elimDisco(char * cadena);
 int fDisk(char * cadena);
 int crearParticion(char * path, char * name, int size, char tipo, char *fit);
 /****ANALIZADOR******/
+
 int analizar(char * cad, int n){
 int estado  = 0;
 
@@ -100,7 +101,7 @@ spliteo = strtok(cad, " ");
 
        switch(estado){
        case 0:
-           printf("comentario: %s\n", cad);
+           printf("comentario: %s\n", entrada);
            estado = 0;
            break;
        case 1:
@@ -814,7 +815,7 @@ void CreateFolder(char * path)
 void insert_mbr(char *fname, int size){
     MBR nmbr, aux;
     partition part1, part2 , part3, part4;
-
+int pos;
     time_t t;
       struct tm *tm;
       char fechayhora[15];
@@ -835,13 +836,15 @@ void insert_mbr(char *fname, int size){
       nmbr.mbr_partition_4 = part4;
 
     strcpy(nmbr.mbr_fecha_creacion, fechayhora);
-    nmbr.contp=0;
-    nmbr.eflag = 0;
+    //nmbr.contp=0;
+   // nmbr.eflag = 0;
     nmbr.mbr_tamano = size;
     FILE *fichero = fopen(fname , "rb+");
 
      if(fichero){
               fseek(fichero,0,SEEK_SET);
+              pos  = ftell(fichero);
+              printf("pos puntero 1: %d\n",pos);
                fwrite(&nmbr, sizeof(MBR),1,fichero);
 
 
@@ -850,6 +853,7 @@ void insert_mbr(char *fname, int size){
                fread(&aux,sizeof(MBR),1,fichero);
 
                printf("la fecha del mbr es: %s\n", aux.mbr_fecha_creacion);
+               fseek(fichero,0,SEEK_SET);
 
                fclose(fichero);
          }
@@ -858,21 +862,198 @@ void insert_mbr(char *fname, int size){
 
 //funcion para crear una particion en el disco
 int crearParticion(char * path, char * name, int size, char tipo, char *fit){
-MBR aux;
+MBR aux, mod, cp2;
 partition auxp;
+int pos;
+auxp.part_status = 'a';
 
 strcpy(auxp.part_name, name);
 auxp.part_size = size;
+
+
 if(tipo!='\0'){
     auxp.part_type=tipo;
 }
 if(fit[0]!='\0'){
-    strcpy(auxp.part_fit, fit);
+    auxp.part_fit = fit[0];
 }
 
 
+printf("si entro a crear particion\n");
+FILE * archivo;
+
+    archivo=fopen(path,"rb+");
+    if(archivo){
+
+                fseek(archivo,0,SEEK_SET);
+                fread(&aux,sizeof(MBR),1,archivo);
+           fclose(archivo);
+    }
+
+    int contp= 0;
+
+    if(aux.mbr_partition_1.part_status =='i'){
+        contp++;
+    }
+    if(aux.mbr_partition_2.part_status == 'i'){
+        contp++;
+    }
+    if(aux.mbr_partition_3.part_status == 'i'){
+        contp++;
+    }
+    if(aux.mbr_partition_4.part_status =='i'){
+        contp++;
+    }
+    int p1i ,p1f, p2i, p2f, p3i, p3f, p4i, p4f; //si valen -1 quiere decir que se encuentra libre esa region
+    if(contp>0){
+
+        if(aux.mbr_partition_1.part_status=='i'){
+            p1i = -1;
+            p1f = -1;
+        }else{
+            p1i = aux.mbr_partition_1.part_start;
+            p1f = aux.mbr_partition_1.part_size+p1i;
+        }
+        if(aux.mbr_partition_2.part_status=='i'){
+            p2i = -1;
+            p2f = -1;
+        }else{
+            p2i = aux.mbr_partition_2.part_start;
+            p2f = aux.mbr_partition_2.part_size+p2i;
+        }
+        if(aux.mbr_partition_3.part_status=='i'){
+            p3i = -1;
+            p3f = -1;
+        }else{
+            p3i = aux.mbr_partition_3.part_start;
+            p3f = aux.mbr_partition_3.part_size+p3i;
+        }
+        if(aux.mbr_partition_4.part_status=='i'){
+            p4i = -1;
+            p4f = -1;
+        }else{
+            p4i = aux.mbr_partition_4.part_start;
+            p4f = aux.mbr_partition_4.part_size+p4i;
+        }
+
+        if(contp == 4){
+            auxp.part_start = 137;
+            archivo=fopen(path,"rb+");
+            if(archivo){
+            mod = aux;
+            mod.mbr_partition_1 = auxp;
+            printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+            fseek(archivo,0,SEEK_SET);
+             fwrite(&mod, sizeof(MBR),1,archivo);
+
+             fseek(archivo,0,SEEK_SET);
+             fread(&cp2,sizeof(MBR),1,archivo);
+             int pos  = ftell(archivo);
+             int tamp = sizeof(MBR);
+             printf("la fecha del mbr es: %s y la part 1 status %c pos puntero: %d\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_1.part_status, pos);
+             printf("tamanio de struct mbr: %d", tamp);
+             fclose(archivo);
+            }
+        }else if(contp==3){
+            //si la ocupada es p1
+            if(p1i != -1){
+
+               if(auxp.part_size<(aux.mbr_tamano-p1f)){
+                   auxp.part_start = p1f+1;
+                   archivo=fopen(path,"rb+");
+                   if(archivo){
+                   mod = aux;
+                   mod.mbr_partition_2 = auxp;
+                   printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                   fseek(archivo,0,SEEK_SET);
+                   fwrite(&mod, sizeof(MBR),1,archivo);
+
+                    fseek(archivo,0,SEEK_SET);
+                    fread(&cp2,sizeof(MBR),1,archivo);
+
+                    printf("la fecha del mbr es: %s y la part 2 status %c\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_2.part_status);
+                    printf("tamanio de struct mbr: %d", tamp);
+                    fclose(archivo);
+                   }
+               }else{
+                   printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+               }
+
+            }else if(p2i != -1){
+                //si la ocupada es p2
+                    int e3 = -1;
+
+                    if(auxp.part_size<(p2i-136)){
+                        e3=1;
+                    }else if(auxp.part_size<(aux.mbr_tamano-p2f)){
+                        e3 = 2;
+                    }
+
+                    switch (e3) {
+                    case 1:
+                        auxp.part_start = 137;
+                        archivo=fopen(path,"rb+");
+                        if(archivo){
+                        mod = aux;
+                        mod.mbr_partition_1 = auxp;
+                        printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                        fseek(archivo,0,SEEK_SET);
+                         fwrite(&mod, sizeof(MBR),1,archivo);
+
+                         fclose(archivo);
+                        }
+                        break;
+                    case 2:
+                        auxp.part_start = 137;
+                        archivo=fopen(path,"rb+");
+                        if(archivo){
+                        mod = aux;
+                        mod.mbr_partition_3 = auxp;
+                        printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                        fseek(archivo,0,SEEK_SET);
+                         fwrite(&mod, sizeof(MBR),1,archivo);
+
+                         fclose(archivo);
+                        }
+                        break;
+                    default:
+                        printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                        break;
+                    }
+
+            }else if(p3i == -1){
+                //si la ocupada es p3
+            }else if(p4i == -1){
+
+            }
+            printf("ya tiene 1 particiones\n");
+
+        }else{
+                printf("ya tiene  particiones\n");
+            }
 
 
+
+    }else{
+        printf("no esposible insertar la particion deseada\n");
+    }
+
+    /*
+                mod = aux;
+                mod.mbr_partition_1 = auxp;
+                printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                fseek(archivo,0,SEEK_SET);
+                 fwrite(&mod, sizeof(MBR),1,archivo);
+
+                 fseek(archivo,0,SEEK_SET);
+                 fread(&cp2,sizeof(MBR),1,archivo);
+                 int pos  = ftell(archivo);
+                 int tamp = sizeof(MBR);
+                 printf("la fecha del mbr es: %s y la part 1 status %c pos puntero: %d\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_1.part_status, pos);
+                 printf("tamanio de struct mbr: %d", tamp);
+                 fclose(archivo);
+        */
+printf("si entro a crear particion***22***\n");
     return 1;
 }
 
