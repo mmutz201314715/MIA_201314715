@@ -19,8 +19,9 @@ typedef struct particion{
 //MBR
 
 typedef struct mbr{
-int mbr_tamano;
-//int Tamaño total del disco en bytes
+int mbr_tamano;//int Tamaño total del disco en bytes
+int eflag; //bandera utilizada para saber si existe una particion extendida
+int contp; //bandera utilizada para contar cuantas particiones se encuentran activas
 char mbr_fecha_creacion[15]; //time Fecha y hora de creación del disco
 int mbr_disk_signature; //int Número random, que identificará de forma única a cada disco
  partition mbr_partition_1; //partition Estructura con información de la partición 1
@@ -38,6 +39,7 @@ int analizar(char * cad, int n);
 void insert_mbr(char *fname, int size);
 int elimDisco(char * cadena);
 int fDisk(char * cadena);
+int crearParticion(char * path, char * name, int size, char tipo, char *fit);
 /****ANALIZADOR******/
 int analizar(char * cad, int n){
 int estado  = 0;
@@ -132,7 +134,7 @@ int fDisk(char * cadena){
     char type = '\0';
     char deldesic[10];
     char fit[5];
-    char name[100];
+    char name[16];
     int add;
     int estado = -1;
     path[0] = '\0';
@@ -140,8 +142,9 @@ int fDisk(char * cadena){
     fit[0]='\0';
     name[0] = '\0';
 char * spliteo, *split2;
-char aux1[100], aux2[100], buffer[100];
+char aux1[100], aux2[100], buffer[100], aux3[16],aux4[16], buffer2[16];
 int bandera = 0;
+int bandera2= 0;
     spliteo = strtok(cadena, " ");
 
     while(spliteo!= NULL){
@@ -224,32 +227,32 @@ int bandera = 0;
 
             for(tam =0; spliteo[tam]!='\0';tam++){
 
-            }
-            if(spliteo[tam-1]=='"'){
-                //el paramtro no posee espacios
-                printf("comilla\n");
-                if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+                        }
+                        if(spliteo[tam-1]=='"'){
+                            //el paramtro no posee espacios
+                            printf("comilla\n");
+                            if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
-                 strcpy(path,spliteo);
-                 bandera = 1;
-                 estado = 0;
-                }
-            }else{
-                //viene un espacio
-                strcpy(path,spliteo);
-                estado =17;
-            }
+                             strcpy(path,spliteo);
+                             bandera = 1;
+                             estado = 0;
+                            }
+                        }else{
+                            //viene un espacio
+                            strcpy(path,spliteo);
+                            estado =17;
+                        }
             break;
         case 12:
             if(strcasecmp("P",spliteo)==0){
-                //crear e kilos
+                //crear como primaria
                 type = 'P';
 
             }else if(strcasecmp("E",spliteo)==0){
-                //crear en megas
+                //crear como extendida
                 type  = 'E';
            } else if(strcasecmp("L",spliteo)==0){
-                //crear en megas
+                //crear como logica
                 type  = 'L';
             }else{
                 //viene un caracter erroneo
@@ -295,9 +298,27 @@ int bandera = 0;
 
             break;
         case 15:
-            strcpy(path,spliteo);
+            for(tam =0; spliteo[tam]!='\0';tam++){
 
-             estado = 0;
+            }
+            if(tam<16){
+
+
+            if(spliteo[tam-1]=='"'){
+                //el paramtro no posee espacios
+                printf("comilla\n");
+                strcpy(name,spliteo);
+                estado = 0;
+                bandera2 = 1;
+            }else{
+                strcpy(name,spliteo);
+                estado = 18;
+            }
+            }else{
+                printf("el nombre de la particion no de debe ser mayor a 15 caracteres\n");
+                estado = 0;
+            }
+
             break;
         case 16:
             add = atoi(spliteo);
@@ -323,7 +344,36 @@ int bandera = 0;
                                         estado =17;
                                     }
             break;
+        case 18:
+            for(tam =0; spliteo[tam]!='\0';tam++){
+
+            }
+            tam++;
+            for(tam = tam; name[tam]!='\0';tam++){
+
+            }
+            if(tam<16){
+            strcpy(aux3, spliteo);
+              snprintf(buffer2, sizeof(buffer2), "%s %s", name, aux3);
+              strcpy(name, buffer2);
+
+
+              if(spliteo[tam-1]=='\"'){
+                                    //el paramtro no posee espacios
+                                    printf("comilla\n");
+                                    bandera2 = 1;
+                                    estado = 0;
+
+              }else{
+                  estado = 18;
+              }
+            }else{
+                printf("el nombre de la particion no de debe ser mayor a 15 caracteres\n");
+                estado = 0;
+            }
+            break;
         default:
+
             break;
         }
 
@@ -335,8 +385,37 @@ int bandera = 0;
         strcpy(aux1 , path);
         split2 = strtok(aux1, "\"");
         strcpy(path,split2);
+        printf("entro\n");
+        //
+        if(name[0]!='\0' && bandera2 == 1){
+            strcpy(aux4, name);
+            split2 = strtok(aux4, "\"");
+            strcpy(name, split2);
+            printf("entro\n");
 
-        printf("si entro \n");
+            if(size>0){
+
+                if(unit!='\0'){
+                    if(unit=='b' && size>= (mb*2)){
+                        crearParticion(path, name, size,type,fit);
+                    }else if(unit == 'k' && size>= 2048){
+                        crearParticion(path, name, (size*kb),type,fit);
+                    }else if(unit == 'm' && size>=2){
+                        crearParticion(path, name, (size*mb),type,fit);
+                    }
+                }else if(unit == '\0' && size>=2048){
+                    crearParticion(path, name, (size*kb),type,fit);
+                }
+
+            }else{
+                printf("el tamanio de la particion no puede menor a 2 MB\n");
+            }
+
+
+        }else{
+            printf("el nombre no se especifico de manera correcta\n");
+        }
+
 
     }else{
         printf("no se especifico el path del disco\n");
@@ -756,6 +835,8 @@ void insert_mbr(char *fname, int size){
       nmbr.mbr_partition_4 = part4;
 
     strcpy(nmbr.mbr_fecha_creacion, fechayhora);
+    nmbr.contp=0;
+    nmbr.eflag = 0;
     nmbr.mbr_tamano = size;
     FILE *fichero = fopen(fname , "rb+");
 
@@ -773,6 +854,26 @@ void insert_mbr(char *fname, int size){
                fclose(fichero);
          }
 
+}
+
+//funcion para crear una particion en el disco
+int crearParticion(char * path, char * name, int size, char tipo, char *fit){
+MBR aux;
+partition auxp;
+
+strcpy(auxp.part_name, name);
+auxp.part_size = size;
+if(tipo!='\0'){
+    auxp.part_type=tipo;
+}
+if(fit[0]!='\0'){
+    strcpy(auxp.part_fit, fit);
+}
+
+
+
+
+    return 1;
 }
 
 
