@@ -42,7 +42,7 @@ int elimDisco(char * cadena);
 int fDisk(char * cadena);
 int crearParticion(char * path, char * name, int size, char tipo, char *fit);
 void quitarPart(char *path, char *name, char * deldesic);
-
+void aumentarPart(char *path, char *name, int add);
 /****ANALIZADOR******/
 
 int analizar(char * cad, int n){
@@ -428,6 +428,19 @@ int bandera2= 0;
                 if(deldesic[0]!='\0'){
                     quitarPart(path, name, deldesic);
                 }else if(deldesic[0]=='\0' && add!=0){
+                    if(unit != '\0'){
+                        if(unit == 'b'){
+                        aumentarPart(path, name,add);
+                        }else if(unit == 'k'){
+                            aumentarPart(path, name,add*kb);
+                        }else if(unit == 'm'){
+                            aumentarPart(path, name,add*mb);
+                        }else{
+                            printf("parametro invalido en unit\n");
+                        }
+                    }else{
+                        printf("unit debe de estar especificado para hacer uso de este subcomando\n");
+                    }
 
                 }else{
                     printf("solo puede haber un comando add o desic a la vez\n");
@@ -1773,10 +1786,10 @@ FILE * archivo;
 printf("hay %d particiones inactivas\n", contp);
     return 1;
 }
-
+//funcion para quitar una particion en el disco
 void quitarPart(char *path, char *name, char * deldesic){
 
-    MBR aux, mod, cp2;
+    MBR aux, mod;
     partition auxp;
 
    printf("si entro a quitar particion\n");
@@ -1954,6 +1967,245 @@ void quitarPart(char *path, char *name, char * deldesic){
 
         }
 }
+void aumentarPart(char *path, char *name,int add){
+
+    MBR aux, mod;
+    partition auxp;
+
+   printf("si entro a quitar particion\n");
+    FILE * archivo;
+
+        archivo=fopen(path,"rb+");
+        if(archivo){
+
+                    fseek(archivo,0,SEEK_SET);
+                    fread(&aux,sizeof(MBR),1,archivo);
+               fclose(archivo);
+        }
+        int p1i ,p1f, p2i, p2f, p3i, p3f, p4i, p4f; //si valen -1 quiere decir que se encuentra libre esa region
+
+
+            if(aux.mbr_partition_1.part_status=='i'){
+                p1i = -1;
+                p1f = -1;
+            }else{
+
+                p1i = aux.mbr_partition_1.part_start;
+                p1f = aux.mbr_partition_1.part_size+p1i;
+            }
+            if(aux.mbr_partition_2.part_status=='i'){
+                p2i = -1;
+                p2f = -1;
+            }else{
+                p2i = aux.mbr_partition_2.part_start;
+                p2f = aux.mbr_partition_2.part_size+p2i;
+            }
+            if(aux.mbr_partition_3.part_status=='i'){
+                p3i = -1;
+                p3f = -1;
+            }else{
+                p3i = aux.mbr_partition_3.part_start;
+                p3f = aux.mbr_partition_3.part_size+p3i;
+            }
+            if(aux.mbr_partition_4.part_status=='i'){
+                p4i = -1;
+                p4f = -1;
+            }else{
+                p4i = aux.mbr_partition_4.part_start;
+                p4f = aux.mbr_partition_4.part_size+p4i;
+            }
+
+         if(strcasecmp(aux.mbr_partition_1.part_name,name)==0){
+
+             auxp = aux.mbr_partition_1;
+             if(add<0){
+                 //quitar memoria a la particion
+                 if((aux.mbr_tamano-136+(add))<0){
+                     printf("no es posible que la memoria quede en valores negativos \n");
+                        return;
+                 }
+                 auxp = aux.mbr_partition_1;
+                 if((auxp.part_size+(add))<(2*mb)){
+                     printf("el tamanio final de la particion no puede ser menor a 2MB \n");
+                     return;
+                 }
+                 auxp.part_size= auxp.part_size+(add);
+                 aux.mbr_partition_1 = auxp;
+                 mod = aux;
+                 archivo=fopen(path,"rb+");
+                 if(archivo){
+                 printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                 fseek(archivo,0,SEEK_SET);
+                 fwrite(&mod, sizeof(MBR),1,archivo);
+                  fclose(archivo);
+                 }
+
+
+
+             }else{
+                 //agregar memoria a la particion
+                 if((auxp.part_size+add)>(aux.mbr_tamano-136)){
+                     printf("no es posible que la particion supere al tamanio del disco \n");
+                        return;
+                 }
+                 if((p1f+add)<p2i){
+                     auxp.part_size= auxp.part_size+(add);
+                     aux.mbr_partition_1 = auxp;
+                     mod = aux;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                 }
+             }
+
+         }else if(strcasecmp(aux.mbr_partition_2.part_name,name)==0){
+
+             auxp = aux.mbr_partition_2;
+             if(add<0){
+                 //quitar memoria a la particion
+                 if((aux.mbr_tamano-136+(add))<0){
+                     printf("no es posible que la memoria quede en valores negativos \n");
+                        return;
+                 }
+                 auxp = aux.mbr_partition_2;
+                 if((auxp.part_size+(add))<(2*mb)){
+                     printf("el tamanio final de la particion no puede ser menor a 2MB \n");
+                     return;
+                 }
+                 auxp.part_size= auxp.part_size+(add);
+                 aux.mbr_partition_2 = auxp;
+                 mod = aux;
+                 archivo=fopen(path,"rb+");
+                 if(archivo){
+                 printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                 fseek(archivo,0,SEEK_SET);
+                 fwrite(&mod, sizeof(MBR),1,archivo);
+                  fclose(archivo);
+                 }
+
+
+
+             }else{
+                 //agregar memoria a la particion
+                 if((auxp.part_size+add)>(aux.mbr_tamano-136)){
+                     printf("no es posible que la particion supere al tamanio del disco \n");
+                        return;
+                 }
+                 if((p2f+add)<p3i){
+                     auxp.part_size= auxp.part_size+(add);
+                     aux.mbr_partition_2 = auxp;
+                     mod = aux;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                 }
+             }
+
+         }else if(strcasecmp(aux.mbr_partition_3.part_name,name)==0){
+
+             auxp = aux.mbr_partition_3;
+             if(add<0){
+                 //quitar memoria a la particion
+                 if((aux.mbr_tamano-136+(add))<0){
+                     printf("no es posible que la memoria quede en valores negativos \n");
+                        return;
+                 }
+                 auxp = aux.mbr_partition_3;
+                 if((auxp.part_size+(add))<(2*mb)){
+                     printf("el tamanio final de la particion no puede ser menor a 2MB \n");
+                     return;
+                 }
+                 auxp.part_size= auxp.part_size+(add);
+                 aux.mbr_partition_3 = auxp;
+                 mod = aux;
+                 archivo=fopen(path,"rb+");
+                 if(archivo){
+                 printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                 fseek(archivo,0,SEEK_SET);
+                 fwrite(&mod, sizeof(MBR),1,archivo);
+                  fclose(archivo);
+                 }
+
+
+
+             }else{
+                 //agregar memoria a la particion
+                 if((auxp.part_size+add)>(aux.mbr_tamano-136)){
+                     printf("no es posible que la particion supere al tamanio del disco \n");
+                        return;
+                 }
+                 if((p3f+add)<p4i){
+                     auxp.part_size= auxp.part_size+(add);
+                     aux.mbr_partition_2 = auxp;
+                     mod = aux;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                 }
+             }
+
+         }else if(strcasecmp(aux.mbr_partition_4.part_name,name)==0){
+
+             auxp = aux.mbr_partition_4;
+             if(add<0){
+                 //quitar memoria a la particion
+                 if((aux.mbr_tamano-136+(add))<0){
+                     printf("no es posible que la memoria quede en valores negativos \n");
+                        return;
+                 }
+                 auxp = aux.mbr_partition_4;
+                 if((auxp.part_size+(add))<(2*mb)){
+                     printf("el tamanio final de la particion no puede ser menor a 2MB \n");
+                     return;
+                 }
+                 auxp.part_size= auxp.part_size+(add);
+                 aux.mbr_partition_4 = auxp;
+                 mod = aux;
+                 archivo=fopen(path,"rb+");
+                 if(archivo){
+                 printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                 fseek(archivo,0,SEEK_SET);
+                 fwrite(&mod, sizeof(MBR),1,archivo);
+                  fclose(archivo);
+                 }
+
+
+
+             }else{
+                 //agregar memoria a la particion
+                 if((auxp.part_size+add)>(aux.mbr_tamano-136)){
+                     printf("no es posible que la particion supere al tamanio del disco \n");
+                        return;
+                 }
+                 if((p4f+add)<aux.mbr_tamano){
+                     auxp.part_size= auxp.part_size+(add);
+                     aux.mbr_partition_4 = auxp;
+                     mod = aux;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                 }
+             }
+
+         }
+
+}
 
 int main(void)
 {
@@ -1963,6 +2215,7 @@ int main(void)
 
 int b =1;
 while(b==1){
+
   analizar(cadena , 500);
 }
 
