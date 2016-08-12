@@ -865,7 +865,7 @@ int pos;
 int crearParticion(char * path, char * name, int size, char tipo, char *fit){
 MBR aux, mod, cp2;
 partition auxp;
-int pos;
+//int pos;
 auxp.part_status = 'a';
 
 strcpy(auxp.part_name, name);
@@ -938,6 +938,7 @@ FILE * archivo;
         }
 
         if(contp == 4){
+        if(auxp.part_size<(aux.mbr_tamano-136)){
             auxp.part_start = 137;
             archivo=fopen(path,"rb+");
             if(archivo){
@@ -954,6 +955,9 @@ FILE * archivo;
              printf("la fecha del mbr es: %s y la part 1 status %c pos puntero: %d\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_1.part_status, pos);
              printf("tamanio de struct mbr: %d", tamp);
              fclose(archivo);
+            }else{
+                   printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+               }
             }
         }else if(contp==3){
             //si la ocupada es p1
@@ -1088,6 +1092,7 @@ FILE * archivo;
                     auxp.part_start = p4f+1;
                     mod = aux;
                     mod.mbr_partition_4 = auxp;
+                    archivo=fopen(path,"rb+");
                     if(archivo){
                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
                     fseek(archivo,0,SEEK_SET);
@@ -1124,6 +1129,7 @@ FILE * archivo;
                     auxp.part_start = p1f+1;
                     mod = aux;
                     mod.mbr_partition_2 = auxp;
+                    archivo=fopen(path,"rb+");
                     if(archivo){
                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
                     fseek(archivo,0,SEEK_SET);
@@ -1154,7 +1160,7 @@ FILE * archivo;
             }else if(p1i!=-1 && p3i!=-1){
 
                 int e3 = -1;
-                 partition auxpm;
+
 
                 if(auxp.part_size<(aux.mbr_tamano-p3f)){
                      e3 = 2;
@@ -1168,6 +1174,7 @@ FILE * archivo;
                     auxp.part_start = p1f+1;
                     mod = aux;
                     mod.mbr_partition_2 = auxp;
+                    archivo=fopen(path,"rb+");
                     if(archivo){
                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
                     fseek(archivo,0,SEEK_SET);
@@ -1179,12 +1186,12 @@ FILE * archivo;
                     break;
                 case 2:
 
-                    auxp.part_start = p2f+1;
+                    auxp.part_start = p3f+1;
                     archivo=fopen(path,"rb+");
                     if(archivo){
                     mod = aux;
-                    mod.mbr_partition_3 = auxp;
-                    printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                    mod.mbr_partition_4 = auxp;
+                    printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
                     fseek(archivo,0,SEEK_SET);
                     fwrite(&mod, sizeof(MBR),1,archivo);
                      fclose(archivo);
@@ -1197,23 +1204,528 @@ FILE * archivo;
 
             }else if(p1i!=-1 && p4i!= -1){
 
+                int e3 = -1;
+                 partition auxpm;
+
+                if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 2;
+                 }
+                if(auxp.part_size<(p4i-p1f)){
+                    e3=1;
+                }
+
+                switch (e3) {
+                case 1:
+
+                    auxp.part_start = p1f+1;
+                    mod = aux;
+                    mod.mbr_partition_2 = auxp;
+                    archivo=fopen(path,"rb+");
+                    if(archivo){
+                    printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                    fseek(archivo,0,SEEK_SET);
+                    fwrite(&mod, sizeof(MBR),1,archivo);
+                     fclose(archivo);
+                    }
+
+
+                    break;
+                case 2:
+                    auxpm = aux.mbr_partition_4;
+                    aux.mbr_partition_3 = auxpm;
+                    auxp.part_start = p4f+1;
+                    archivo=fopen(path,"rb+");
+                    if(archivo){
+                    mod = aux;
+                    mod.mbr_partition_4 = auxp;
+                    printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                    fseek(archivo,0,SEEK_SET);
+                    fwrite(&mod, sizeof(MBR),1,archivo);
+                     fclose(archivo);
+                    }
+                    break;
+                default:
+                    printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                    break;
+                }
+
             }else if(p2i!=-1 && p3i!= -1){
+
+                int e3 = -1;
+                 partition auxpm;
+                 if(auxp.part_size<(aux.mbr_tamano-p3f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p3i-p2f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p2i-136)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxp.part_start = 136+1;
+                     mod = aux;
+                     mod.mbr_partition_1 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_4 = auxpm;
+                     auxp.part_start = p2f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+
+                     auxp.part_start = p2f+1;
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
 
             }else if(p2i!=-1 && p4i!= -1){
 
+                int e3 = -1;
+                 partition auxpm;
+                 if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p4i-p2f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p2i-136)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxp.part_start = 136+1;
+                     mod = aux;
+                     mod.mbr_partition_1 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxp.part_start = p2f+1;
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+
+                     break;
+                 case 3:
+                     auxpm = aux.mbr_partition_4;
+                     aux.mbr_partition_3 = auxpm;
+                     auxp.part_start = p4f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
+
             }else if(p3i!=-1 && p4i!= -1){
 
+                int e3 = -1;
+                 partition auxpm, auxpm2;
+                 if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p4i-p3f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p3i-136)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxp.part_start = 136+1;
+                     mod = aux;
+                     mod.mbr_partition_1 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm;
+                     auxp.part_start = p3f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm;
+                     auxpm2 = aux.mbr_partition_4;
+                     aux.mbr_partition_3 = auxpm2;
+                     auxp.part_start = p4f+1;
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
+            }
+        }else if(contp == 1){
+            if(p1i == -1){
+
+                int e3 = -1;
+                 partition auxpm, auxpm2, auxpm3;
+                 if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 4;
+                 }
+
+                 if(auxp.part_size<(p4i-p3f)){
+                     e3 = 3;
+                 }
+                 if(auxp.part_size<(p3i-p2f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p2i-136)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxp.part_start = 136+1;
+                     mod = aux;
+                     mod.mbr_partition_1 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxpm = aux.mbr_partition_2;
+                     aux.mbr_partition_1 = auxpm;
+                     auxp.part_start = p2f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_2 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+                     auxpm = aux.mbr_partition_2;
+                     aux.mbr_partition_1 = auxpm;
+                     auxpm2 = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm2;
+                     auxp.part_start = p3f+1;
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 4:
+                     auxpm = aux.mbr_partition_2;
+                     aux.mbr_partition_1 = auxpm;
+                     auxpm2 = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm2;
+                     auxpm3 = aux.mbr_partition_4;
+                     aux.mbr_partition_3 = auxpm3;
+                     auxp.part_start = p4f+1;
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
+
+            }else if(p2i == -1){
+
+                int e3 = -1;
+                 partition auxpm, auxpm2;
+                 if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p4i-p3f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p3i-p1f)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxp.part_start = p1f+1;
+                     mod = aux;
+                     mod.mbr_partition_2 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm;
+                     auxp.part_start = p3f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_2 = auxpm;
+                     auxpm2 = aux.mbr_partition_4;
+                     aux.mbr_partition_3 = auxpm2;
+                     auxp.part_start = p4f+1;
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
+
+            }else if(p3i == -1){
+
+                int e3 = -1;
+                 partition auxpm, auxpm2;
+                 if(auxp.part_size<(aux.mbr_tamano-p4f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p4i-p2f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p2i-p1f)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxpm = aux.mbr_partition_2;
+                     aux.mbr_partition_3 = auxpm;
+                     auxp.part_start = p1f+1;
+                     mod = aux;
+                     mod.mbr_partition_2 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+
+                     auxp.part_start = p2f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+                     auxpm2 = aux.mbr_partition_4;
+                     aux.mbr_partition_3 = auxpm2;
+                     auxp.part_start = p4f+1;
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
+
+            }else if(p4i == -1){
+                int e3 = -1;
+                 partition auxpm, auxpm2;
+                 if(auxp.part_size<(aux.mbr_tamano-p3f)){
+                     e3 = 3;
+                 }
+
+                 if(auxp.part_size<(p3i-p2f)){
+                     e3 = 2;
+                 }
+
+                 if(auxp.part_size<(p2i-p1f)){
+                   e3 = 1;
+               }
+                 switch (e3) {
+                 case 1:
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_4 = auxpm;
+                     auxpm2 = aux.mbr_partition_2;
+                     aux.mbr_partition_3 = auxpm2;
+                     auxp.part_start = p1f+1;
+                     mod = aux;
+                     mod.mbr_partition_2 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+                 case 2:
+
+                     auxpm = aux.mbr_partition_3;
+                     aux.mbr_partition_4 = auxpm;
+                     auxp.part_start = p2f+1;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     mod = aux;
+                     mod.mbr_partition_3 = auxp;
+                     printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+
+                     break;
+                 case 3:
+
+                     auxp.part_start = p3f+1;
+                     mod = aux;
+                     mod.mbr_partition_4 = auxp;
+                     archivo=fopen(path,"rb+");
+                     if(archivo){
+                     printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                     fseek(archivo,0,SEEK_SET);
+                     fwrite(&mod, sizeof(MBR),1,archivo);
+                      fclose(archivo);
+                     }
+                     break;
+
+                     break;
+                 default:
+                     printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
+                     break;
+                 }
             }
         }
-        else{
-                printf("ya tiene  particiones\n");
-            }
-
-
-
     }else{
-        printf("no esposible insertar la particion deseada\n");
-    }
+            //aqui debe de ir el manejo de las extendidas
+                printf("no es posible insertar mas particiones, slots primarios llenos\n");
+            }
 
     /*
                 mod = aux;
@@ -1241,10 +1753,10 @@ int main(void)
  char cadena[500];
 
 
-
-
+int b =1;
+while(b==1){
   analizar(cadena , 500);
-
+}
 
 
     return 0;
