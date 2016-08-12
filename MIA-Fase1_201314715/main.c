@@ -52,7 +52,7 @@ typedef struct ListaId{
 
 int crearDisco(char *cadena);
 void CreateFolder(char * path);
-int analizar(char * cad, int n, Lista * lista);
+int analizar(char * cad, int n, Lista * lista, int ward);
 void insert_mbr(char *fname, int size);
 int elimDisco(char * cadena);
 int fDisk(char * cadena);
@@ -68,15 +68,16 @@ void mostrarmount(Lista * lista);
 void umount(Lista * lista, char * cadena);
 void desmontador(Lista * lista, char * identificador);
 void actetiqueta(Lista * lista, char iddisk, int id);
-
+void exec(Lista *lista ,char *cadena);
+void ejecutar(Lista * lista, char * path);
 /****ANALIZADOR******/
 
-int analizar(char * cad, int n, Lista *lista){
+int analizar(char * cad, int n, Lista *lista, int ward){
 int estado  = 0;
 
     /***LECTURA DE CADENA**/
     int i, c;
-
+if(ward == 1){
        c=getchar();
        if (c == EOF) {
            cad[0] = '\0';
@@ -97,9 +98,9 @@ int estado  = 0;
 
        if (c != '\n' && c != EOF)
            while ((c = getchar()) != '\n' && c != EOF);
+}
 
-
-       char entrada[500];
+       char entrada[1000];
        entrada[0]='\0';
        printf("%s\n",cad);
 
@@ -125,6 +126,8 @@ spliteo = strtok(cad, " ");
            estado = 4;
        }else if(strcasecmp("umount", spliteo)==0){
            estado = 5;
+       }else if(strcasecmp("exec", spliteo)==0){
+           estado = 6;
        }
        else{
            //errores de escritura
@@ -157,6 +160,11 @@ spliteo = strtok(cad, " ");
        case 5:
            printf("comando mount\n");
            umount(lista, entrada);
+
+           break;
+       case 6:
+           printf("comando exec\n");
+           exec(lista, entrada);
 
            break;
        default:
@@ -2706,6 +2714,160 @@ void actetiqueta(Lista * lista, char iddisk, int id){
         aux = aux->siguiente;
     }
 }
+void exec(Lista *lista , char *cadena){
+    int bandera =0;
+    char path[100];
+    char aux1[100];
+    char buffer[100];
+
+    path[0] = '\0';
+    int estado = 0;
+    int tam;
+    char * spliteo;
+
+        spliteo = strtok(cadena, " ");
+        while (spliteo != NULL){
+           if(strcasecmp("exec", spliteo)==0){
+               //confirmar que si se recibio el comando rmdisk
+               estado = 1;
+           }
+           switch (estado) {
+           case 0:
+               //no hacer nada
+               break;
+           case 1:
+               estado = 2;
+               break;
+           case 2:
+               for(tam =0; spliteo[tam]!='\0';tam++){
+
+               }
+               if(spliteo[tam-3]=='.' && spliteo[tam-2]=='s' && spliteo[tam-1]=='h'){
+                   //el paramtro no posee espacios
+                   printf("comilla\n");
+                    strcpy(path,spliteo);
+                    bandera = 1;
+                    estado = 0;
+
+               }else{
+                   //viene un espacio
+                   strcpy(path,spliteo);
+                   estado =3;
+               }
+                break;
+           case 3:
+
+                strcpy(aux1, spliteo);
+                  snprintf(buffer, sizeof(buffer), "%s %s", path, aux1);
+                  strcpy(path, buffer);
+
+                  for(tam =0; spliteo[tam]!='\0';tam++){
+
+                  }
+                  if(spliteo[tam-3]=='.' && spliteo[tam-2]=='s' && spliteo[tam-1]=='h'){
+                 //el paramtro no posee espacios
+                  printf("comilla\n");
+                   bandera = 1;
+                      estado = 0;
+
+                  }else{
+                      estado =3;
+                   }
+                break;
+           default:
+               break;
+           }
+
+        spliteo = strtok(NULL, " \n");
+}
+
+printf("%s\n", path);
+        //verificar que si haya introducido un path
+       if(path[0]!='\0' && bandera == 1){
+ printf("entro exec1\n");
+           ejecutar(lista, path);
+
+       }else{
+           printf("no se especifico el path del script a ejecutar\n");
+       }
+}
+
+void ejecutar(Lista * lista, char * path){
+printf("entro exec2\n");
+    char buffer[1000], entrada[1000];
+    int bcoment = 0;
+    int tam;
+    int estado = -1;
+    char *split;
+    FILE *file;
+    char aux1[100];
+   char linea[1000];
+
+        file = fopen(path, "r");
+        if (file == NULL) {
+            printf("Error al abrir el script\n");
+        }
+        else {
+            while (!feof(file)) {
+                fgets(linea, 1000, file);
+                for(tam =0; linea[tam]!='\0';tam++){
+
+                }
+                if(linea[tam-1]=='/' && linea[0]!='#'){
+                    //se tiene que almacenar en el buffer
+                    estado = 2;
+                }else if(linea[0]=='\n'){
+                    estado = 0;
+                }else {
+                    if(estado == 3 && linea[0]!='#'){
+                        //ya termino en esta linea el comando
+                        estado = 3;
+                    }else if(estado == 3 && linea[0]=='#'){
+
+                        estado = 3;
+                        bcoment = 1;
+                    }else{
+                        //comando de una sola linea
+                        estado =1;
+                    }
+
+                }
+
+                switch (estado) {
+                case 0:
+                    //es un espacio no hace nada
+                    break;
+                case 1:
+                    analizar(linea, 1000,lista,0);
+                    estado = 0;
+                    break;
+                case 2:
+                    split = strtok(linea, "/");
+                    strcpy(entrada, split);
+                     estado = 3;
+                    break;
+                case 3:
+                    if(bcoment == 1){
+                       analizar(linea, 1000,lista,0);
+                       estado = 3;
+                       bcoment = 0;
+                    }else{
+                        strcpy(aux1, linea);
+                         snprintf(buffer, sizeof(buffer), "%s %s", buffer, aux1);
+                         strcpy(entrada, buffer);
+                         analizar(entrada, 1000, lista,0);
+                         estado = 0;
+                    }
+
+                    break;
+                default:
+                    break;
+                }
+
+            }
+            fclose(file);
+        }
+}
 
 /****************************************/
 Lista *listapart;
@@ -2714,12 +2876,11 @@ int main(void)
   listapart = (Lista*)malloc(sizeof(Lista));
 inicializar(listapart);
     printf(":::::::::::::Bienvenido::::::::\n");
- char cadena[500];
-
+ char cadena[1000];
 
 int b =1;
 while(b==1){
-  analizar(cadena , 500, listapart);
+  analizar(cadena , 1000, listapart, 1);
 }
 
 
