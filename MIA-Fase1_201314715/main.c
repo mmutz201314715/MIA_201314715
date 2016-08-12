@@ -33,6 +33,7 @@ int mbr_disk_signature; //int Número random, que identificará de forma única 
 
 
 /*****lista de funciones y procedimientos a utilizar*/
+
 int crearDisco(char *cadena);
 void CreateFolder(char * path);
 int analizar(char * cad, int n);
@@ -40,7 +41,8 @@ void insert_mbr(char *fname, int size);
 int elimDisco(char * cadena);
 int fDisk(char * cadena);
 int crearParticion(char * path, char * name, int size, char tipo, char *fit);
-void reordenarPart(char *path);
+void quitarPart(char *path, char *name, char * deldesic);
+
 /****ANALIZADOR******/
 
 int analizar(char * cad, int n){
@@ -130,7 +132,7 @@ spliteo = strtok(cad, " ");
 /***********CREACION DE PARTICIONES**********/
 int fDisk(char * cadena){
     int tam;
-    int size;
+    int size = -1;
     char unit='\0';
     char path[100];
     char type = '\0';
@@ -399,19 +401,41 @@ int bandera2= 0;
 
                 if(unit!='\0'){
                     if(unit=='b' && size>= (mb*2)){
-                        crearParticion(path, name, size,type,fit);
+                       int d= crearParticion(path, name, size,type,fit);
+                       if(d== 0){
+                           printf("el nombre ya existe\n");
+                       }
                     }else if(unit == 'k' && size>= 2048){
-                        crearParticion(path, name, (size*kb),type,fit);
+                       int d = crearParticion(path, name, (size*kb),type,fit);
+                       if(d== 0){
+                           printf("el nombre ya existe\n");
+                       }
                     }else if(unit == 'm' && size>=2){
-                        crearParticion(path, name, (size*mb),type,fit);
+                       int d = crearParticion(path, name, (size*mb),type,fit);
+                       if(d== 0){
+                           printf("el nombre ya existe\n");
+                       }
                     }
                 }else if(unit == '\0' && size>=2048){
-                    crearParticion(path, name, (size*kb),type,fit);
+                   int d = crearParticion(path, name, (size*kb),type,fit);
+                    if(d== 0){
+                        printf("el nombre ya existe\n");
+                    }
                 }
 
+            }else if(size == -1){
+                //aqui van los comandos para delete y add
+                if(deldesic[0]!='\0'){
+                    quitarPart(path, name, deldesic);
+                }else if(deldesic[0]=='\0' && add!=0){
+
+                }else{
+                    printf("solo puede haber un comando add o desic a la vez\n");
+                }
             }else{
-                printf("el tamanio de la particion no puede menor a 2 MB\n");
+               printf("el tamanio de la particion no puede menor a 2 MB\n");
             }
+
 
 
         }else{
@@ -874,9 +898,13 @@ auxp.part_size = size;
 
 if(tipo!='\0'){
     auxp.part_type=tipo;
+}else{
+    auxp.part_type = 'P';
 }
 if(fit[0]!='\0'){
     auxp.part_fit = fit[0];
+}else{
+    auxp.part_fit = 'W';
 }
 
 
@@ -890,6 +918,10 @@ FILE * archivo;
                 fread(&aux,sizeof(MBR),1,archivo);
            fclose(archivo);
     }
+
+
+
+
 
     int contp= 0;
 
@@ -912,6 +944,9 @@ FILE * archivo;
             p1i = -1;
             p1f = -1;
         }else{
+            if(strcasecmp(aux.mbr_partition_1.part_name,name)==0){
+                return 0;
+            }
             p1i = aux.mbr_partition_1.part_start;
             p1f = aux.mbr_partition_1.part_size+p1i;
         }
@@ -919,6 +954,9 @@ FILE * archivo;
             p2i = -1;
             p2f = -1;
         }else{
+            if(strcasecmp(aux.mbr_partition_2.part_name,name)==0){
+                 return 0;
+             }
             p2i = aux.mbr_partition_2.part_start;
             p2f = aux.mbr_partition_2.part_size+p2i;
         }
@@ -926,6 +964,9 @@ FILE * archivo;
             p3i = -1;
             p3f = -1;
         }else{
+            if(strcasecmp(aux.mbr_partition_3.part_name,name)==0){
+                 return 0;
+             }
             p3i = aux.mbr_partition_3.part_start;
             p3f = aux.mbr_partition_3.part_size+p3i;
         }
@@ -933,6 +974,9 @@ FILE * archivo;
             p4i = -1;
             p4f = -1;
         }else{
+            if(strcasecmp(aux.mbr_partition_4.part_name,name)==0){
+                 return 0;
+             }
             p4i = aux.mbr_partition_4.part_start;
             p4f = aux.mbr_partition_4.part_size+p4i;
         }
@@ -1726,26 +1770,190 @@ FILE * archivo;
             //aqui debe de ir el manejo de las extendidas
                 printf("no es posible insertar mas particiones, slots primarios llenos\n");
             }
-
-    /*
-                mod = aux;
-                mod.mbr_partition_1 = auxp;
-                printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
-                fseek(archivo,0,SEEK_SET);
-                 fwrite(&mod, sizeof(MBR),1,archivo);
-
-                 fseek(archivo,0,SEEK_SET);
-                 fread(&cp2,sizeof(MBR),1,archivo);
-                 int pos  = ftell(archivo);
-                 int tamp = sizeof(MBR);
-                 printf("la fecha del mbr es: %s y la part 1 status %c pos puntero: %d\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_1.part_status, pos);
-                 printf("tamanio de struct mbr: %d", tamp);
-                 fclose(archivo);
-        */
-printf("si entro a crear particion***22***\n");
+printf("hay %d particiones inactivas\n", contp);
     return 1;
 }
 
+void quitarPart(char *path, char *name, char * deldesic){
+
+    MBR aux, mod, cp2;
+    partition auxp;
+
+   printf("si entro a quitar particion\n");
+    FILE * archivo;
+
+        archivo=fopen(path,"rb+");
+        if(archivo){
+
+                    fseek(archivo,0,SEEK_SET);
+                    fread(&aux,sizeof(MBR),1,archivo);
+               fclose(archivo);
+        }
+
+        //verificar que exista la particion
+        if(strcasecmp(aux.mbr_partition_1.part_name,name)==0){
+            auxp = aux.mbr_partition_1;
+            aux.mbr_partition_1.part_fit = '\0';
+            aux.mbr_partition_1.part_name[0] = '\0';
+            aux.mbr_partition_1.part_start = -1;
+            aux.mbr_partition_1.part_status = 'i';
+            aux.mbr_partition_1.part_type = '\0';
+            aux.mbr_partition_1.part_size = -1;
+
+            mod = aux;
+
+            if(strcasecmp(deldesic,"Fast")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }else if(strcasecmp(deldesic, "Full")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                    fseek(archivo,auxp.part_start-1,SEEK_SET);
+                    char relleno = '\0';
+                    long i;
+                    for(i = 0; i<auxp.part_size;i++){
+                        fwrite(&relleno,sizeof(char),1,archivo);
+                    }
+                    fclose(archivo);
+                }
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_1.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+
+            }
+
+        }else if(strcasecmp(aux.mbr_partition_2.part_name,name)==0){
+
+            auxp = aux.mbr_partition_2;
+            aux.mbr_partition_2.part_fit = '\0';
+            aux.mbr_partition_2.part_name[0] = '\0';
+            aux.mbr_partition_2.part_start = -1;
+            aux.mbr_partition_2.part_status = 'i';
+            aux.mbr_partition_2.part_type = '\0';
+            aux.mbr_partition_2.part_size = -1;
+
+            mod = aux;
+
+            if(strcasecmp(deldesic,"Fast")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }else if(strcasecmp(deldesic, "Full")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                    fseek(archivo,auxp.part_start-1,SEEK_SET);
+                    char relleno = '\0';
+                    long i;
+                    for(i = 0; i<auxp.part_size;i++){
+                        fwrite(&relleno,sizeof(char),1,archivo);
+                    }
+                    fclose(archivo);
+                }
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_2.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+
+            }
+
+        }else if(strcasecmp(aux.mbr_partition_3.part_name,name)==0){
+
+            auxp = aux.mbr_partition_3;
+            aux.mbr_partition_3.part_fit = '\0';
+            aux.mbr_partition_3.part_name[0] = '\0';
+            aux.mbr_partition_3.part_start = -1;
+            aux.mbr_partition_3.part_status = 'i';
+            aux.mbr_partition_3.part_type = '\0';
+            aux.mbr_partition_3.part_size = -1;
+
+            mod = aux;
+
+            if(strcasecmp(deldesic,"Fast")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }else if(strcasecmp(deldesic, "Full")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                    fseek(archivo,auxp.part_start-1,SEEK_SET);
+                    char relleno = '\0';
+                    long i;
+                    for(i = 0; i<auxp.part_size;i++){
+                        fwrite(&relleno,sizeof(char),1,archivo);
+                    }
+                    fclose(archivo);
+                }
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_3.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }
+
+        }else if(strcasecmp(aux.mbr_partition_4.part_name,name)==0){
+
+            auxp = aux.mbr_partition_4;
+            aux.mbr_partition_4.part_fit = '\0';
+            aux.mbr_partition_4.part_name[0] = '\0';
+            aux.mbr_partition_4.part_start = -1;
+            aux.mbr_partition_4.part_status = 'i';
+            aux.mbr_partition_4.part_type = '\0';
+            aux.mbr_partition_4.part_size = -1;
+
+            mod = aux;
+
+            if(strcasecmp(deldesic,"Fast")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }else if(strcasecmp(deldesic, "Full")==0){
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                    fseek(archivo,auxp.part_start-1,SEEK_SET);
+                    char relleno = '\0';
+                    long i;
+                    for(i = 0; i<auxp.part_size;i++){
+                        fwrite(&relleno,sizeof(char),1,archivo);
+                    }
+                    fclose(archivo);
+                }
+                archivo=fopen(path,"rb+");
+                if(archivo){
+                printf("status de la particion:: %c\n",mod.mbr_partition_4.part_status);
+                fseek(archivo,0,SEEK_SET);
+                fwrite(&mod, sizeof(MBR),1,archivo);
+                 fclose(archivo);
+                }
+            }
+
+        }
+}
 
 int main(void)
 {
