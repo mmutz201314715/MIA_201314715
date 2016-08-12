@@ -4,6 +4,7 @@
 #include <time.h>
 #define kb 1024
 #define mb 1048576
+#define mx 100
 
 /*****estructuras o tablas *******/
 //particion:  puede ser primaria o extendida
@@ -30,22 +31,47 @@ int mbr_disk_signature; //int Número random, que identificará de forma única 
  partition mbr_partition_4; //partition Estructura con información de la partición 4
 }MBR;
 
+/*estructuras para montar*/
 
+typedef struct part{
+    partition info;
+    int id;
+    char iddisco;
+    char * path;
+    struct part * siguiente;
+    struct part *anterior;
+
+}montado;
+
+typedef struct ListaId{
+    montado *inicio, *fin;
+
+}Lista;
 
 /*****lista de funciones y procedimientos a utilizar*/
 
 int crearDisco(char *cadena);
 void CreateFolder(char * path);
-int analizar(char * cad, int n);
+int analizar(char * cad, int n, Lista * lista);
 void insert_mbr(char *fname, int size);
 int elimDisco(char * cadena);
 int fDisk(char * cadena);
 int crearParticion(char * path, char * name, int size, char tipo, char *fit);
 void quitarPart(char *path, char *name, char * deldesic);
 void aumentarPart(char *path, char *name, int add);
+void mount(Lista * lista, char *cadena);
+void inicializar(Lista * lista);
+void montarPart(Lista * lista, char* path, char *name);
+int buscarpart(Lista * lista, char* path, char *nombre);
+char seekpart(Lista * lista, char* path);
+void mostrarmount(Lista * lista);
+void umount(Lista * lista, char * cadena);
+void desmontador(Lista * lista, char * identificador);
+void actetiqueta(Lista * lista, char iddisk, int id);
+
 /****ANALIZADOR******/
 
-int analizar(char * cad, int n){
+int analizar(char * cad, int n, Lista *lista){
 int estado  = 0;
 
     /***LECTURA DE CADENA**/
@@ -95,6 +121,10 @@ spliteo = strtok(cad, " ");
            estado = 2;
        }else if(strcasecmp("fdisk", spliteo)==0){
            estado = 3;
+       }else if(strcasecmp("mount", spliteo)==0){
+           estado = 4;
+       }else if(strcasecmp("umount", spliteo)==0){
+           estado = 5;
        }
        else{
            //errores de escritura
@@ -118,6 +148,16 @@ spliteo = strtok(cad, " ");
        case 3:
            printf("comando fdisk\n");
            fDisk(entrada);
+           break;
+       case 4:
+           printf("comando mount\n");
+           mount(lista, entrada);
+
+           break;
+       case 5:
+           printf("comando mount\n");
+           umount(lista, entrada);
+
            break;
        default:
           //error
@@ -2207,16 +2247,479 @@ void aumentarPart(char *path, char *name,int add){
 
 }
 
+/*FUNCIONES PARA MONTAJE Y DESMONTAJE DE PARTICIONES*/
+ /*funcion mount*/
+
+void mount(Lista * lista, char *cadena){
+    int tam;
+    char path[100];
+    char name[16];
+    int estado = -1;
+    int contador = 0;
+    path[0] = '\0';
+    name[0] = '\0';
+char * spliteo, *split2;
+char aux1[100], aux2[100], buffer[100], aux3[16],aux4[16], buffer2[16];
+int bandera = 0;
+int bandera2= 0;
+    spliteo = strtok(cadena, " ");
+
+    while(spliteo!= NULL){
+
+        if(strcasecmp("mount", spliteo) ==0){
+                   estado = 0;
+        }else if(strcasecmp("-path::", spliteo)==0){
+            estado = 3;
+        }else if(strcasecmp("-name::", spliteo)==0){
+            estado = 7;
+        }
+
+        switch (estado) {
+        case 0:
+           //no hace nada desecha;
+            break;
+        case 3:
+            estado = 11;
+            break;
+        case 7:
+            estado = 15;
+            break;
+        case 11:
+
+            for(tam =0; spliteo[tam]!='\0';tam++){
+
+                        }
+                        if(spliteo[tam-1]=='"'){
+                            //el paramtro no posee espacios
+                            printf("comilla\n");
+                            if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+
+                             strcpy(path,spliteo);
+                             bandera = 1;
+                             estado = 0;
+                            }
+                        }else{
+                            //viene un espacio
+                            strcpy(path,spliteo);
+                            estado =17;
+                        }
+            break;
+        case 15:
+            for(tam =0; spliteo[tam]!='\0';tam++){
+
+            }
+            if(tam<16){
+
+
+            if(spliteo[tam-1]=='"'){
+                //el paramtro no posee espacios
+                printf("comilla\n");
+                strcpy(name,spliteo);
+                estado = 0;
+                bandera2 = 1;
+            }else{
+                strcpy(name,spliteo);
+                estado = 18;
+            }
+            }else{
+                printf("el nombre de la particion no de debe ser mayor a 15 caracteres\n");
+                estado = 0;
+            }
+
+            break;
+        case 17:
+
+            strcpy(aux2, spliteo);
+              snprintf(buffer, sizeof(buffer), "%s %s", path, aux2);
+              strcpy(path, buffer);
+
+              for(tam =0; spliteo[tam]!='\0';tam++){
+
+              }
+              if(spliteo[tam-1]=='\"'){
+                                    //el paramtro no posee espacios
+                                    printf("comilla\n");
+                                    if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
+
+                                     bandera = 1;
+                                     estado = 0;
+                                    }
+                                    }else{
+                                        estado =17;
+                                    }
+            break;
+        case 18:
+            for(tam =0; spliteo[tam]!='\0';tam++){
+
+            }
+            tam++;
+            for(tam = tam; name[tam]!='\0';tam++){
+
+            }
+            if(tam<16){
+            strcpy(aux3, spliteo);
+              snprintf(buffer2, sizeof(buffer2), "%s %s", name, aux3);
+              strcpy(name, buffer2);
+
+
+              if(spliteo[tam-1]=='\"'){
+                                    //el paramtro no posee espacios
+                                    printf("comilla\n");
+                                    bandera2 = 1;
+                                    estado = 0;
+
+              }else{
+                  estado = 18;
+              }
+            }else{
+                printf("el nombre de la particion no de debe ser mayor a 15 caracteres\n");
+                estado = 0;
+            }
+            break;
+        default:
+
+            break;
+        }
+        contador ++;
+        spliteo = strtok(NULL, " \n");
+    }
+
+    printf("cont %d\n",contador);
+    if(contador == 1 && estado == 0){
+        mostrarmount(lista);
+        return;
+    }
+    printf("%s\n",path);
+    if(path[0]!='\0' && bandera == 1){
+        strcpy(aux1 , path);
+        split2 = strtok(aux1, "\"");
+        strcpy(path,split2);
+        printf("entro\n");
+        //
+        if(name[0]!='\0' && bandera2 == 1){
+            strcpy(aux4, name);
+            split2 = strtok(aux4, "\"");
+            strcpy(name, split2);
+            printf("entro\n");
+
+            montarPart(lista, path, name);
+
+        }else{
+            printf("el nombre no se especifico de manera correcta\n");
+        }
+
+
+    }else{
+        printf("no se especifico el path del disco\n");
+    }
+
+
+}
+
+/*INICIALIZAR LISTA*/
+void inicializar(Lista * lista){
+    lista->inicio = NULL;
+    lista->fin = NULL;
+
+}
+
+void montarPart(Lista * lista, char* path, char *name){
+    MBR aux;
+    partition auxp;
+
+    montado *nuevo, *auxm;
+
+    //obtener la particion del mbr, de no existir el disco o el mbr se retorna error
+    FILE * archivo;
+
+        archivo=fopen(path,"rb+");
+        if(archivo){
+
+                    fseek(archivo,0,SEEK_SET);
+                    fread(&aux,sizeof(MBR),1,archivo);
+               fclose(archivo);
+        }else{
+            printf("el disco no existe\n");
+            return;
+        }
+
+        if(strcasecmp(aux.mbr_partition_1.part_name,name)==0){
+            //si existe
+            auxp = aux.mbr_partition_1;
+        }else if(strcasecmp(aux.mbr_partition_2.part_name,name)==0){
+            auxp = aux.mbr_partition_2;
+        }else if(strcasecmp(aux.mbr_partition_3.part_name,name)==0){
+            auxp = aux.mbr_partition_3;
+        }else if(strcasecmp(aux.mbr_partition_4.part_name,name)==0){
+            auxp = aux.mbr_partition_4;
+        }else{
+            printf("la particion no existe\n");
+            return;
+        }
+
+
+        nuevo = (montado*)malloc(sizeof(montado));
+    if(lista->inicio==NULL){
+        nuevo->id = 1;
+        nuevo->iddisco = 'a';
+        nuevo->info = auxp;
+        nuevo->path = (char*)malloc(mx * sizeof(char));
+        strcpy(nuevo->path,path);
+        nuevo->siguiente = NULL;
+        nuevo->anterior = NULL;
+        lista->inicio = nuevo;
+        lista->fin = nuevo;
+
+    }else{
+        //insercion al final
+        //recorrer la lista sin imprimir
+        int sduplicate = buscarpart(lista, path, name);
+        if(sduplicate!=-1){
+
+
+                nuevo->id = sduplicate;
+                nuevo->iddisco = seekpart(lista, path);
+                nuevo->info = auxp;
+                nuevo->path = (char*)malloc(mx * sizeof(char));
+                strcpy(nuevo->path,path);
+                nuevo->siguiente = NULL;
+                nuevo->anterior = NULL;
+
+                auxm = lista->fin;
+                auxm->siguiente = nuevo;
+                nuevo->anterior = auxm;
+                lista->fin = nuevo;
+            }else{
+
+            printf("la particion ya se encuentra montada\n");
+
+        }
+    }
+
+}
+char seekpart(Lista * lista, char* path){
+    montado *aux;
+    aux = lista->inicio;
+    char contadorp = 'a';
+
+    while(aux!=NULL){
+        if(strcasecmp(aux->path, path)==0){
+
+            return contadorp;
+        }
+        aux = aux->siguiente;
+        contadorp++;
+    }
+    return contadorp;
+}
+
+int buscarpart(Lista * lista, char* path, char *nombre){
+    montado *aux;
+    aux = lista->inicio;
+    int contadorp = 1;
+
+    while(aux!=NULL){
+        if(strcasecmp(aux->path, path)==0){
+            if(strcasecmp(aux->info.part_name,nombre)==0){
+                //la particion ya esta montada
+                return -1;
+            }
+            aux = aux->siguiente;
+            contadorp++;
+        }
+    }
+    return contadorp;
+}
+
+void mostrarmount(Lista * lista){
+    montado *aux;
+    aux = lista->inicio;
+
+   if(lista->inicio == NULL){
+       printf("no existen particiones montadas\n") ;
+       return;
+   }
+   printf("PARTICIONES MONTADAS ACTUALMENTE\n");
+    while(aux!=NULL){
+        printf("id::vd%c%d -path::\"%s\" -name:: \"%s\"\n",aux->iddisco, aux->id, aux->path, aux->info.part_name);
+aux = aux->siguiente;
+    }
+
+}
+
+void umount(Lista * lista, char * cadena){
+    int tam;
+
+    char name[16];
+    int estado = -1;
+    int contador = 0;
+
+    name[0] = '\0';
+char * spliteo;
+    spliteo = strtok(cadena, " ");
+
+    while(spliteo!= NULL){
+        for(tam =0; spliteo[tam]!='\0';tam++){
+
+                    }
+
+        if(strcasecmp("umount", spliteo) ==0){
+                   estado = 0;
+        }else if(strcasecmp("-id1::", spliteo)==0){
+            estado = 1;
+        }else if(contador >3 && tam > 5 && spliteo[0]=='-' && (spliteo[1]=='i' || spliteo[1]=='I') && (spliteo[2]=='d' || spliteo[2]=='D') && spliteo[tam-1]==':' && spliteo[tam-2]==':'){
+            estado = 3;
+        }
+
+        switch (estado) {
+        case 0:
+           //no hace nada desecha;
+            break;
+        case 1:
+            estado = 2;
+            break;
+        case 2:
+            strcpy(name,spliteo);
+            estado = 0;
+            break;
+        case 3:
+            estado = 4;
+            break;
+        case 4:
+            //desmonta varios
+            strcpy(name,spliteo);
+            desmontador(lista, name);
+            //umount(lista, name);
+            break;
+        default:
+
+            break;
+        }
+        contador ++;
+        spliteo = strtok(NULL, " \n");
+    }
+
+
+    if(contador == 3 && estado == 0){
+        //desmonta solo 1
+        desmontador(lista, name);
+        return;
+    }
+
+}
+
+void desmontador(Lista * lista, char * identificador){
+
+    if(lista->inicio==NULL){
+        printf("la lista de particiones montadas esta vacia\n");
+        return;
+    }
+
+    montado *elim , *aux, *aux2;
+    int tam, idpart;
+    char splitter1[5];
+    char path[mx];
+    for(tam =0; identificador[tam]!='\0';tam++){
+
+                }
+
+    char iddisk = identificador[2];
+    printf("%c\n",iddisk);
+
+    for(tam =2; identificador[tam]!='\0';tam++){
+        splitter1[tam] = identificador[tam];
+    }
+    idpart = atoi(splitter1);
+    printf("%d\n",idpart);
+    aux = lista->inicio;
+    if(lista->inicio == lista->fin){
+        //solo tiene un elemento
+
+        if(aux->id == idpart && aux->iddisco == iddisk){
+            elim = aux;
+            lista->inicio = NULL;
+            lista->fin = NULL;
+
+            free(elim->path);
+            free(elim);
+        }else{
+            //no es el unico y lo debe ubicar
+            while(aux!=NULL){
+                if(aux->id == idpart && aux->iddisco == iddisk){
+                    break;
+                }
+                aux = aux->siguiente;
+            }
+            if(aux!=NULL){
+                //lo encontro
+                elim = aux;
+                strcpy(path,elim->path);
+                if(aux == lista->inicio){
+                    aux = aux->siguiente;
+                    aux->anterior = NULL;
+                    lista->inicio = aux;
+
+                    free(elim->path);
+                    free(elim);
+                    //se llama aqui al metodo que reajusta los valores de las etiquetas
+                    actetiqueta(lista, iddisk, idpart);
+
+                }else if(aux == lista->fin){
+                    aux = aux->anterior;
+                    aux->siguiente = NULL;
+                    lista->fin = aux;
+
+                    free(elim->path);
+                    free(elim);
+                    //
+                    actetiqueta(lista, iddisk, idpart);
+                }else{
+                    //esta entre el primero y el ultimo
+                    aux2 = aux->siguiente;
+                    aux = aux->anterior;
+                    aux->siguiente = aux2;
+                    aux2->anterior= aux;
+
+                    free(elim->path);
+                    free(elim);
+                    //
+                    actetiqueta(lista, iddisk, idpart);
+                }
+            }else{
+                printf("la particion que se desea desmontar no se encuentra montada actualmente\n");
+            }
+
+        }
+    }
+
+}
+void actetiqueta(Lista * lista, char iddisk, int id){
+    montado *aux;
+    aux = lista->inicio;
+
+    while(aux!=NULL){
+        if(aux->iddisco == iddisk){
+            if(id<aux->id){
+                aux->id--;
+            }
+        }
+        aux = aux->siguiente;
+    }
+}
+
+/****************************************/
+Lista *listapart;
 int main(void)
 {
+  listapart = (Lista*)malloc(sizeof(Lista));
+inicializar(listapart);
     printf(":::::::::::::Bienvenido::::::::\n");
  char cadena[500];
 
 
 int b =1;
 while(b==1){
-
-  analizar(cadena , 500);
+  analizar(cadena , 500, listapart);
 }
 
 
