@@ -70,6 +70,8 @@ void desmontador(Lista * lista, char * identificador);
 void actetiqueta(Lista * lista, char iddisk, int id);
 void exec(Lista *lista ,char *cadena);
 void ejecutar(Lista * lista, char * path);
+void rep(Lista *lista , char * cadena);
+void repmbr(Lista *lista, char * identificador, char *pathrep);
 /****ANALIZADOR******/
 
 int analizar(char * cad, int n, Lista *lista, int ward){
@@ -128,6 +130,8 @@ spliteo = strtok(cad, " ");
            estado = 5;
        }else if(strcasecmp("exec", spliteo)==0){
            estado = 6;
+       }else if(strcasecmp("rep", spliteo)==0){
+           estado = 7;
        }
        else{
            //errores de escritura
@@ -165,6 +169,11 @@ spliteo = strtok(cad, " ");
        case 6:
            printf("comando exec\n");
            exec(lista, entrada);
+
+           break;
+       case 7:
+           printf("comando rep\n");
+           rep(lista , entrada);
 
            break;
        default:
@@ -409,7 +418,9 @@ int bandera2= 0;
               snprintf(buffer2, sizeof(buffer2), "%s %s", name, aux3);
               strcpy(name, buffer2);
 
+                for(tam =0; spliteo[tam]!='\0';tam++){
 
+            }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
                                     printf("comilla\n");
@@ -625,6 +636,7 @@ printf("%s\n", path);
 /*****CREAR DISCO******/
 //normal
 int crearDisco(char * cadena){
+
     int size=0;
     char unit='\0';
     char path[100];
@@ -907,6 +919,9 @@ int pos;
       char fechayhora[15];
 
       t=time(NULL);
+
+
+
       tm=localtime(&t);
       strftime(fechayhora, 15, "%d/%m/%Y", tm);
       printf ("Hoy es: %s\n", fechayhora);
@@ -925,6 +940,10 @@ int pos;
     //nmbr.contp=0;
    // nmbr.eflag = 0;
     nmbr.mbr_tamano = size;
+    int hora = time(NULL);
+    srand(hora);
+
+    nmbr.mbr_disk_signature = rand()% (1000000+1);
     FILE *fichero = fopen(fname , "rb+");
 
      if(fichero){
@@ -979,9 +998,6 @@ FILE * archivo;
                 fread(&aux,sizeof(MBR),1,archivo);
            fclose(archivo);
     }
-
-
-
 
 
     int contp= 0;
@@ -2318,7 +2334,9 @@ int bandera2= 0;
             }
             if(tam<16){
 
+                for(tam =0; spliteo[tam]!='\0';tam++){
 
+            }
             if(spliteo[tam-1]=='"'){
                 //el paramtro no posee espacios
                 printf("comilla\n");
@@ -2369,7 +2387,9 @@ int bandera2= 0;
               snprintf(buffer2, sizeof(buffer2), "%s %s", name, aux3);
               strcpy(name, buffer2);
 
+for(tam =0; spliteo[tam]!='\0';tam++){
 
+            }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
                                     printf("comilla\n");
@@ -2723,12 +2743,14 @@ void exec(Lista *lista , char *cadena){
     path[0] = '\0';
     int estado = 0;
     int tam;
-    char * spliteo;
+    char * spliteo, *split2;
 
         spliteo = strtok(cadena, " ");
         while (spliteo != NULL){
            if(strcasecmp("exec", spliteo)==0){
                //confirmar que si se recibio el comando rmdisk
+               estado = 0;
+           }else if(strcasecmp("-path::", spliteo)==0){
                estado = 1;
            }
            switch (estado) {
@@ -2742,13 +2764,14 @@ void exec(Lista *lista , char *cadena){
                for(tam =0; spliteo[tam]!='\0';tam++){
 
                }
-               if(spliteo[tam-3]=='.' && spliteo[tam-2]=='s' && spliteo[tam-1]=='h'){
+               if(spliteo[tam-1]=='"'){
+               if(spliteo[tam-4]=='.' && spliteo[tam-3]=='s' && spliteo[tam-2]=='h'){
                    //el paramtro no posee espacios
                    printf("comilla\n");
                     strcpy(path,spliteo);
                     bandera = 1;
                     estado = 0;
-
+                    }
                }else{
                    //viene un espacio
                    strcpy(path,spliteo);
@@ -2764,12 +2787,13 @@ void exec(Lista *lista , char *cadena){
                   for(tam =0; spliteo[tam]!='\0';tam++){
 
                   }
+                  if(spliteo[tam-1]=='\"'){
                   if(spliteo[tam-3]=='.' && spliteo[tam-2]=='s' && spliteo[tam-1]=='h'){
                  //el paramtro no posee espacios
                   printf("comilla\n");
                    bandera = 1;
                       estado = 0;
-
+                  }
                   }else{
                       estado =3;
                    }
@@ -2784,13 +2808,21 @@ void exec(Lista *lista , char *cadena){
 printf("%s\n", path);
         //verificar que si haya introducido un path
        if(path[0]!='\0' && bandera == 1){
+           strcpy(aux1 , path);
+           split2 = strtok(aux1, "\"");
+           strcpy(path,split2);
+
  printf("entro exec1\n");
            ejecutar(lista, path);
 
        }else{
            printf("no se especifico el path del script a ejecutar\n");
        }
+
+
+
 }
+
 
 void ejecutar(Lista * lista, char * path){
 printf("entro exec2\n");
@@ -2867,6 +2899,271 @@ printf("entro exec2\n");
             }
             fclose(file);
         }
+}
+/*********REPORTES**********/
+void rep(Lista *lista , char * cadena){
+
+    int tam;
+    char path[100];
+    char name[16];
+    int estado = -1;
+
+    path[0] = '\0';
+    name[0] = '\0';
+    char iddisk[10];
+    iddisk[0] = '\0';
+char * spliteo, *split2;
+char aux1[100], aux2[100], buffer[100];
+int bandera = 0;
+
+    spliteo = strtok(cadena, " ");
+
+    while(spliteo!= NULL){
+
+        if(strcasecmp("rep", spliteo) ==0){
+                   estado = 0;
+        }else if(strcasecmp("-path::", spliteo)==0){
+            estado = 3;
+        }else if(strcasecmp("-name::", spliteo)==0){
+            estado = 7;
+        }else if(strcasecmp("-id::", spliteo)==0){
+            estado = 1;
+        }
+
+        switch (estado) {
+        case 0:
+           //no hace nada desecha;
+            break;
+        case 1:
+            estado = 2;
+            break;
+        case 2:
+            strcpy(iddisk,spliteo);
+            estado = 0;
+            break;
+        case 3:
+            estado = 11;
+            break;
+        case 7:
+            estado = 15;
+            break;
+        case 11:
+
+            for(tam =0; spliteo[tam]!='\0';tam++){
+
+                        }
+                        if(spliteo[tam-1]=='"'){
+                            //el paramtro no posee espacios
+                            printf("comilla\n");
+                            if(spliteo[tam-5]=='.'){
+
+                             strcpy(path,spliteo);
+                             bandera = 1;
+                             estado = 0;
+                            }
+                        }else{
+                            //viene un espacio
+                            strcpy(path,spliteo);
+                            estado =17;
+                        }
+            break;
+        case 15:
+
+            strcpy(name, spliteo);
+            estado = 0;
+            break;
+        case 17:
+
+            strcpy(aux2, spliteo);
+              snprintf(buffer, sizeof(buffer), "%s %s", path, aux2);
+              strcpy(path, buffer);
+
+              for(tam =0; spliteo[tam]!='\0';tam++){
+
+              }
+              if(spliteo[tam-1]=='\"'){
+                                    //el paramtro no posee espacios
+                                    printf("comilla\n");
+                                    if(spliteo[tam-5]=='.'){
+
+                                     bandera = 1;
+                                     estado = 0;
+                                    }
+                                    }else{
+                                        estado =17;
+                                    }
+            break;
+
+        default:
+
+            break;
+        }
+
+        spliteo = strtok(NULL, " \n");
+    }
+
+    printf("%s\n",path);
+    if(path[0]!='\0' && bandera == 1){
+        strcpy(aux1 , path);
+        split2 = strtok(aux1, "\"");
+        strcpy(path,split2);
+        printf("entro\n");
+        //
+
+        if(iddisk[0] !='\0'){
+
+            strcpy(aux1 , path);
+            split2 = strtok(aux1, "\"");
+            strcpy(name,split2);
+            if(strcasecmp(name,"mbr")){
+                repmbr(lista, iddisk, path);
+
+            }else if(strcasecmp(name, "disk")){
+
+            }else{
+                printf("nombre de reporte invalido\n");
+            }
+
+        }else{
+            printf("el id de la particion no se especifico de manera correcta\n");
+        }
+
+
+    }else{
+        printf("no se especifico el path del archivo\n");
+    }
+
+
+}
+/****REP*MBR**/
+void repmbr(Lista *lista, char * identificador, char * pathrep){
+    if(lista->inicio==NULL){
+        printf("no es posible crear el reporte, la lista de particiones montadas esta vacia\n");
+        return;
+    }
+    MBR aux;
+
+    montado *auxpart;
+    int tam, idpart;
+    char splitter1[5];
+
+
+    for(tam =0; identificador[tam]!='\0';tam++){
+
+      }
+
+    char iddisk = identificador[2];
+    printf("%c\n",iddisk);
+
+int i = 0;
+    for(tam =3; identificador[tam]!='\0';tam++){
+        splitter1[i] = identificador[tam];
+        i++;
+    }
+    printf("%s\n",splitter1);
+    idpart = atoi(splitter1);
+
+    auxpart = lista->inicio;
+    while(auxpart!=NULL){
+        if(auxpart->iddisco == iddisk && auxpart->id == idpart){
+            break;
+        }
+        auxpart= auxpart->siguiente;
+    }
+
+    if(auxpart!=NULL){
+
+        FILE * archivo;
+
+            archivo=fopen(auxpart->path,"rb+");
+            if(archivo){
+                        fseek(archivo,0,SEEK_SET);
+                        fread(&aux,sizeof(MBR),1,archivo);
+                   fclose(archivo);
+            }
+
+            FILE* file;
+
+                 // imprimir cabeceras de archivo
+
+                 file =fopen("mbr.dot", "w");
+
+                 fprintf(file,"digraph {\nnode [shape = plaintext];\n");
+                      // fprintf(file,"\tedge [color=\"blue\", dir=forward]\n");
+                         // fprintf(file,"\trankdir=TB\n");
+                          fprintf(file,"subgraph cluster0 {\nnode [style=filled,color=white];");
+                          fprintf(file, "label = \"MBR %s\";\n", auxpart->path);
+                         fprintf(file, "struct1 [label = <<table>");
+
+                         fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>Nombre</b></td><td><b>Valor</b></td></tr>");
+                         fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>mbr_tamano</b></td><td>%d</td></tr>",aux.mbr_tamano);
+                         fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>mbr_fecha_creacion</b></td><td>%s</td></tr>",aux.mbr_fecha_creacion);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>mbr_disk_signature</b></td><td>%d</td></tr>",aux.mbr_disk_signature);
+                         if(aux.mbr_partition_1.part_status == 'a'){
+
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_status_1</b></td><td>%c</td></tr>",aux.mbr_partition_1.part_status);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_type_1</b></td><td>%c</td></tr>",aux.mbr_partition_1.part_type);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_fit_1</b></td><td>%c</td></tr>",aux.mbr_partition_1.part_fit);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_start_1</b></td><td>%d</td></tr>",aux.mbr_partition_1.part_start);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_size_1</b></td><td>%d</td></tr>",aux.mbr_partition_1.part_size);
+                          fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_name_1</b></td><td>%s</td></tr>",aux.mbr_partition_1.part_name);
+
+                         }
+
+                         if(aux.mbr_partition_2.part_status == 'a'){
+
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_status_2</b></td><td>%c</td></tr>",aux.mbr_partition_2.part_status);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_type_2</b></td><td>%c</td></tr>",aux.mbr_partition_2.part_type);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_fit_2</b></td><td>%c</td></tr>",aux.mbr_partition_2.part_fit);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_start_2</b></td><td>%d</td></tr>",aux.mbr_partition_2.part_start);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_size_2</b></td><td>%d</td></tr>",aux.mbr_partition_2.part_size);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_name_2</b></td><td>%s</td></tr>",aux.mbr_partition_2.part_name);
+
+                         }
+
+                         if(aux.mbr_partition_3.part_status == 'a'){
+
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_status_</b></td><td>%c</td></tr>",aux.mbr_partition_3.part_status);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_type_3</b></td><td>%c</td></tr>",aux.mbr_partition_3.part_type);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_fit_3</b></td><td>%c</td></tr>",aux.mbr_partition_3.part_fit);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_start_3</b></td><td>%d</td></tr>",aux.mbr_partition_3.part_start);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_size_3</b></td><td>%d</td></tr>",aux.mbr_partition_3.part_size);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_name_3</b></td><td>%s</td></tr>",aux.mbr_partition_3.part_name);
+
+                         }
+
+                         if(aux.mbr_partition_4.part_status == 'a'){
+
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_status_4</b></td><td>%c</td></tr>",aux.mbr_partition_4.part_status);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_type_4</b></td><td>%c</td></tr>",aux.mbr_partition_4.part_type);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_fit_4</b></td><td>%c</td></tr>",aux.mbr_partition_4.part_fit);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_start_4</b></td><td>%d</td></tr>",aux.mbr_partition_4.part_start);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_size_4</b></td><td>%d</td></tr>",aux.mbr_partition_4.part_size);
+                             fprintf(file,"<tr WIDTH=\"100\" HEIGHT=\"50\"><td><b>part_name_4</b></td><td>%s</td></tr>",aux.mbr_partition_4.part_name);
+
+                         }
+
+                          fprintf(file,"</table>>];\n}");
+                          fprintf(file , "\n}");
+
+
+                fclose(file);
+                char * pbuffer2;
+                char pbuffer[100], buffer2[100], buffer3[200];
+                pbuffer2 = strtok(pathrep,".");
+                strcpy(pbuffer,pbuffer2);
+                snprintf(buffer3,sizeof(buffer3), "dot -Tjpg mbr.dot -o %s.jpg -Gcharset=latin1", pbuffer);
+                snprintf(buffer2, sizeof(buffer2), "xdg-open %s.jpg",pbuffer);
+                system(buffer3);
+                system(buffer2);
+                //system("dot -Tpng sistema.dot -o sistema.png -Gcharset=latin1");
+              //  system("xdg-open /home/mario/EDD/Practicav12016/sistema.png");
+
+    }else{
+        printf("la particion de la cual se desea reportar MBR no esta montada\n");
+    }
+
+
 }
 
 /****************************************/
