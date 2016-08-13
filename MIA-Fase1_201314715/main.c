@@ -105,10 +105,10 @@ if(ward == 1){
 
        char entrada[1000];
        entrada[0]='\0';
-       printf("%s\n",cad);
+
 
        strcpy(entrada, cad);
-       printf("%s\n",entrada);
+
 
 char * spliteo;
 spliteo = strtok(cad, " ");
@@ -292,7 +292,7 @@ int bandera2= 0;
                         }
                         if(spliteo[tam-1]=='"'){
                             //el paramtro no posee espacios
-                            printf("comilla\n");
+
                             if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                              strcpy(path,spliteo);
@@ -368,7 +368,7 @@ int bandera2= 0;
 
             if(spliteo[tam-1]=='"'){
                 //el paramtro no posee espacios
-                printf("comilla\n");
+
                 strcpy(name,spliteo);
                 estado = 0;
                 bandera2 = 1;
@@ -396,7 +396,7 @@ int bandera2= 0;
               }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
-                                    printf("comilla\n");
+
                                     if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                                      bandera = 1;
@@ -424,7 +424,7 @@ int bandera2= 0;
             }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
-                                    printf("comilla\n");
+
                                     bandera2 = 1;
                                     estado = 0;
 
@@ -444,18 +444,18 @@ int bandera2= 0;
         spliteo = strtok(NULL, " \n");
     }
 
-    printf("%s\n",path);
+
     if(path[0]!='\0' && bandera == 1){
         strcpy(aux1 , path);
         split2 = strtok(aux1, "\"");
         strcpy(path,split2);
-        printf("entro\n");
+
         //
         if(name[0]!='\0' && bandera2 == 1){
             strcpy(aux4, name);
             split2 = strtok(aux4, "\"");
             strcpy(name, split2);
-            printf("entro\n");
+
 
             if(size>0){
 
@@ -561,7 +561,7 @@ int elimDisco(char * cadena){
                }
                if(spliteo[tam-1]=='"'){
                    //el paramtro no posee espacios
-                   printf("comilla\n");
+
                    if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                     strcpy(path,spliteo);
@@ -585,7 +585,7 @@ int elimDisco(char * cadena){
                   }
                   if(spliteo[tam-1]=='\"'){
                                         //el paramtro no posee espacios
-                                        printf("comilla\n");
+
                                         if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                                          bandera = 1;
@@ -607,7 +607,7 @@ int elimDisco(char * cadena){
         spliteo = strtok(NULL, " \n");
 }
 
-printf("%s\n", path);
+
         //verificar que si haya introducido un path
        if(path[0]!='\0' && bandera == 1){
            strcpy(aux1 , path);
@@ -725,7 +725,7 @@ int crearDisco(char * cadena){
                 }
                 if(spliteo[tam-1]=='"'){
                     //el paramtro no posee espacios
-                    printf("comilla\n");
+
                     strcpy(path,spliteo);
                     estado = 0;
                     bandera1 = 1;
@@ -773,7 +773,7 @@ int crearDisco(char * cadena){
                   }
                   if(spliteo[tam-1]=='\"'){
                                         //el paramtro no posee espacios
-                                        printf("comilla\n");
+
                                         bandera1 = 1;
                                         estado = 0;
 
@@ -814,7 +814,7 @@ int crearDisco(char * cadena){
                 break;
             }
         //toma el siguiente token
-        printf("split: %s\n",spliteo);
+
         spliteo = strtok(NULL, " \n");
         }
 
@@ -833,7 +833,7 @@ int crearDisco(char * cadena){
                    FILE* archivo;
                    char buffer2[200];
                    snprintf(buffer2, sizeof(buffer2), "%s%s", path,name);
-                    printf("%s\n",buffer2);
+
                    if(unit!='\0'){
 
                        if(unit=='k' && size >= 10240){
@@ -925,7 +925,7 @@ int pos;
 
       tm=localtime(&t);
       strftime(fechayhora, 15, "%d/%m/%Y", tm);
-      printf ("Hoy es: %s\n", fechayhora);
+
 
       part1.part_status = 'i';
       part2.part_status = 'i';
@@ -938,8 +938,7 @@ int pos;
       nmbr.mbr_partition_4 = part4;
 
     strcpy(nmbr.mbr_fecha_creacion, fechayhora);
-    //nmbr.contp=0;
-   // nmbr.eflag = 0;
+
     nmbr.mbr_tamano = size;
     int hora = time(NULL);
     srand(hora);
@@ -950,7 +949,7 @@ int pos;
      if(fichero){
               fseek(fichero,0,SEEK_SET);
               pos  = ftell(fichero);
-              printf("pos puntero 1: %d\n",pos);
+
                fwrite(&nmbr, sizeof(MBR),1,fichero);
 
 
@@ -960,7 +959,6 @@ int pos;
 
                printf("la fecha del mbr es: %s\n", aux.mbr_fecha_creacion);
                fseek(fichero,0,SEEK_SET);
-
                fclose(fichero);
          }
 
@@ -989,7 +987,7 @@ if(fit[0]!='\0'){
 }
 
 
-printf("si entro a crear particion\n");
+
 FILE * archivo;
 
     archivo=fopen(path,"rb+");
@@ -1072,10 +1070,7 @@ FILE * archivo;
 
              fseek(archivo,0,SEEK_SET);
              fread(&cp2,sizeof(MBR),1,archivo);
-             int pos  = ftell(archivo);
-             int tamp = sizeof(MBR);
-             printf("la fecha del mbr es: %s y la part 1 status %c pos puntero: %d\n", cp2.mbr_fecha_creacion, cp2.mbr_partition_1.part_status, pos);
-             printf("tamanio de struct mbr: %d", tamp);
+
              fclose(archivo);
             }else{
                    printf("no fue posible insertar la particion, espacio insuficiente en el disco\n");
@@ -2316,7 +2311,7 @@ int bandera2= 0;
                         }
                         if(spliteo[tam-1]=='"'){
                             //el paramtro no posee espacios
-                            printf("comilla\n");
+
                             if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                              strcpy(path,spliteo);
@@ -2340,7 +2335,7 @@ int bandera2= 0;
             }
             if(spliteo[tam-1]=='"'){
                 //el paramtro no posee espacios
-                printf("comilla\n");
+
                 strcpy(name,spliteo);
                 estado = 0;
                 bandera2 = 1;
@@ -2365,7 +2360,7 @@ int bandera2= 0;
               }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
-                                    printf("comilla\n");
+
                                     if(spliteo[tam-5]=='.'&& spliteo[tam-4]=='d' && spliteo[tam-3]=='s'&& spliteo[tam-2]=='k'){
 
                                      bandera = 1;
@@ -2393,7 +2388,7 @@ for(tam =0; spliteo[tam]!='\0';tam++){
             }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
-                                    printf("comilla\n");
+
                                     bandera2 = 1;
                                     estado = 0;
 
@@ -2413,23 +2408,23 @@ for(tam =0; spliteo[tam]!='\0';tam++){
         spliteo = strtok(NULL, " \n");
     }
 
-    printf("cont %d\n",contador);
+
     if(contador == 1 && estado == 0){
         mostrarmount(lista);
         return;
     }
-    printf("%s\n",path);
+
     if(path[0]!='\0' && bandera == 1){
         strcpy(aux1 , path);
         split2 = strtok(aux1, "\"");
         strcpy(path,split2);
-        printf("entro\n");
-        //
+
+
         if(name[0]!='\0' && bandera2 == 1){
             strcpy(aux4, name);
             split2 = strtok(aux4, "\"");
             strcpy(name, split2);
-            printf("entro\n");
+
 
             montarPart(lista, path, name);
 
@@ -2653,13 +2648,13 @@ void desmontador(Lista * lista, char * identificador){
                 }
 
     char iddisk = identificador[2];
-    printf("%c\n",iddisk);
+
 
     for(tam =2; identificador[tam]!='\0';tam++){
         splitter1[tam] = identificador[tam];
     }
     idpart = atoi(splitter1);
-    printf("%d\n",idpart);
+
     aux = lista->inicio;
     if(lista->inicio == lista->fin){
         //solo tiene un elemento
@@ -2768,7 +2763,7 @@ void exec(Lista *lista , char *cadena){
                if(spliteo[tam-1]=='"'){
                if(spliteo[tam-4]=='.' && spliteo[tam-3]=='s' && spliteo[tam-2]=='h'){
                    //el paramtro no posee espacios
-                   printf("comilla\n");
+
                     strcpy(path,spliteo);
                     bandera = 1;
                     estado = 0;
@@ -2791,7 +2786,7 @@ void exec(Lista *lista , char *cadena){
                   if(spliteo[tam-1]=='\"'){
                   if(spliteo[tam-3]=='.' && spliteo[tam-2]=='s' && spliteo[tam-1]=='h'){
                  //el paramtro no posee espacios
-                  printf("comilla\n");
+
                    bandera = 1;
                       estado = 0;
                   }
@@ -2806,14 +2801,14 @@ void exec(Lista *lista , char *cadena){
         spliteo = strtok(NULL, " \n");
 }
 
-printf("%s\n", path);
+
         //verificar que si haya introducido un path
        if(path[0]!='\0' && bandera == 1){
            strcpy(aux1 , path);
            split2 = strtok(aux1, "\"");
            strcpy(path,split2);
 
- printf("entro exec1\n");
+
            ejecutar(lista, path);
 
        }else{
@@ -2826,7 +2821,7 @@ printf("%s\n", path);
 
 
 void ejecutar(Lista * lista, char * path){
-printf("entro exec2\n");
+
     char buffer[1000], entrada[1000];
     int bcoment = 0;
     int tam;
@@ -2841,8 +2836,10 @@ printf("entro exec2\n");
             printf("Error al abrir el script\n");
         }
         else {
+            int contador = 0;
             while (!feof(file)) {
                 fgets(linea, 1000, file);
+                printf("linea %d: %s",contador, linea);
                 for(tam =0; linea[tam]!='\0';tam++){
 
                 }
@@ -2896,7 +2893,7 @@ printf("entro exec2\n");
                 default:
                     break;
                 }
-
+                contador ++;
             }
             fclose(file);
         }
@@ -2955,7 +2952,7 @@ int bandera = 0;
                         }
                         if(spliteo[tam-1]=='"'){
                             //el paramtro no posee espacios
-                            printf("comilla\n");
+
                             if(spliteo[tam-5]=='.'){
 
                              strcpy(path,spliteo);
@@ -2984,7 +2981,7 @@ int bandera = 0;
               }
               if(spliteo[tam-1]=='\"'){
                                     //el paramtro no posee espacios
-                                    printf("comilla\n");
+
                                     if(spliteo[tam-5]=='.'){
 
                                      bandera = 1;
@@ -3003,12 +3000,12 @@ int bandera = 0;
         spliteo = strtok(NULL, " \n");
     }
 
-    printf("%s\n",path);
+
     if(path[0]!='\0' && bandera == 1){
         strcpy(aux1 , path);
         split2 = strtok(aux1, "\"");
         strcpy(path,split2);
-        printf("entro\n");
+
         //
 
         if(iddisk[0] !='\0'){
@@ -3054,14 +3051,14 @@ void repmbr(Lista *lista, char * identificador, char * pathrep){
       }
 
     char iddisk = identificador[2];
-    printf("%c\n",iddisk);
+
 
 int i = 0;
     for(tam =3; identificador[tam]!='\0';tam++){
         splitter1[i] = identificador[tam];
         i++;
     }
-    printf("%s\n",splitter1);
+
     idpart = atoi(splitter1);
 
     auxpart = lista->inicio;
@@ -3085,7 +3082,7 @@ int i = 0;
 
             FILE* file;
 
-                 // imprimir cabeceras de archivo
+
 
                  file =fopen("mbr.dot", "w");
 
@@ -3184,14 +3181,14 @@ void repdisk(Lista *lista, char * identificador, char * pathrep){
       }
 
     char iddisk = identificador[2];
-    printf("%c\n",iddisk);
+
 
 int i = 0;
     for(tam =3; identificador[tam]!='\0';tam++){
         splitter1[i] = identificador[tam];
         i++;
     }
-    printf("%s\n",splitter1);
+
     idpart = atoi(splitter1);
 
     auxpart = lista->inicio;
@@ -3294,6 +3291,7 @@ int main(void)
   listapart = (Lista*)malloc(sizeof(Lista));
 inicializar(listapart);
     printf(":::::::::::::Bienvenido::::::::\n");
+    printf("para salir presione dos veces enter\n");
  char cadena[1000];
 
 int b =1;
