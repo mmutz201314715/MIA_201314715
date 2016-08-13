@@ -72,6 +72,7 @@ void exec(Lista *lista ,char *cadena);
 void ejecutar(Lista * lista, char * path);
 void rep(Lista *lista , char * cadena);
 void repmbr(Lista *lista, char * identificador, char *pathrep);
+void repdisk(Lista *lista, char * identificador, char * pathrep);
 /****ANALIZADOR******/
 
 int analizar(char * cad, int n, Lista *lista, int ward){
@@ -3012,14 +3013,14 @@ int bandera = 0;
 
         if(iddisk[0] !='\0'){
 
-            strcpy(aux1 , path);
+            strcpy(aux1 , name);
             split2 = strtok(aux1, "\"");
             strcpy(name,split2);
-            if(strcasecmp(name,"mbr")){
+            if(strcasecmp(name,"mbr")==0){
                 repmbr(lista, iddisk, path);
 
-            }else if(strcasecmp(name, "disk")){
-
+            }else if(strcasecmp(name,"disk")==0){
+                  repdisk(lista, iddisk, path);
             }else{
                 printf("nombre de reporte invalido\n");
             }
@@ -3091,7 +3092,7 @@ int i = 0;
                  fprintf(file,"digraph {\nnode [shape = plaintext];\n");
                       // fprintf(file,"\tedge [color=\"blue\", dir=forward]\n");
                          // fprintf(file,"\trankdir=TB\n");
-                          fprintf(file,"subgraph cluster0 {\nnode [style=filled,color=white];");
+                          fprintf(file,"subgraph cluster0 {\n");
                           fprintf(file, "label = \"MBR %s\";\n", auxpart->path);
                          fprintf(file, "struct1 [label = <<table>");
 
@@ -3164,6 +3165,126 @@ int i = 0;
     }
 
 
+}
+void repdisk(Lista *lista, char * identificador, char * pathrep){
+
+    if(lista->inicio==NULL){
+        printf("no es posible crear el reporte, la lista de particiones montadas esta vacia\n");
+        return;
+    }
+    MBR aux;
+
+    montado *auxpart;
+    int tam, idpart;
+    char splitter1[5];
+
+
+    for(tam =0; identificador[tam]!='\0';tam++){
+
+      }
+
+    char iddisk = identificador[2];
+    printf("%c\n",iddisk);
+
+int i = 0;
+    for(tam =3; identificador[tam]!='\0';tam++){
+        splitter1[i] = identificador[tam];
+        i++;
+    }
+    printf("%s\n",splitter1);
+    idpart = atoi(splitter1);
+
+    auxpart = lista->inicio;
+    while(auxpart!=NULL){
+        if(auxpart->iddisco == iddisk && auxpart->id == idpart){
+            break;
+        }
+        auxpart= auxpart->siguiente;
+    }
+
+    if(auxpart!=NULL){
+
+        FILE * archivo;
+
+            archivo=fopen(auxpart->path,"rb+");
+            if(archivo){
+                        fseek(archivo,0,SEEK_SET);
+                        fread(&aux,sizeof(MBR),1,archivo);
+                   fclose(archivo);
+            }
+
+            FILE* file;
+
+                 // imprimir cabeceras de archivo
+
+                 file =fopen("disk.dot", "w");
+                 fprintf(file,"digraph structs {\n");
+                 fprintf(file,"subgraph cluster0 {\n");
+                 fprintf(file, "label = \"Disk %s\";\n", auxpart->path);
+
+                 fprintf(file," struct3 [shape=record,label=\" MBR |");
+                if(aux.mbr_partition_1.part_status == 'a'){
+                    if(aux.mbr_partition_1.part_type== 'P'){
+                        fprintf(file,"Primaria:: %s | ",aux.mbr_partition_1.part_name);
+                    }else{
+                        fprintf(file,"Extendida:: %s | ",aux.mbr_partition_1.part_name);
+                    }
+
+                }else{
+                    fprintf(file," LIBRE |");
+                }
+                if(aux.mbr_partition_2.part_status == 'a'){
+                    if(aux.mbr_partition_2.part_type== 'P'){
+                        fprintf(file,"Primaria:: %s | ",aux.mbr_partition_2.part_name);
+                    }else{
+                        fprintf(file,"Extendida:: %s | ",aux.mbr_partition_2.part_name);
+                    }
+
+                }else{
+                    fprintf(file," LIBRE |");
+                }
+                if(aux.mbr_partition_3.part_status == 'a'){
+                    if(aux.mbr_partition_3.part_type== 'P'){
+                        fprintf(file,"Primaria:: %s | ",aux.mbr_partition_3.part_name);
+                    }else{
+                        fprintf(file,"Extendida:: %s | ",aux.mbr_partition_3.part_name);
+                    }
+
+                }else{
+                    fprintf(file," LIBRE |");
+                }
+                if(aux.mbr_partition_4.part_status == 'a'){
+                    if(aux.mbr_partition_4.part_type== 'P'){
+                        fprintf(file,"Primaria:: %s\" ]",aux.mbr_partition_4.part_name);
+                    }else{
+                        fprintf(file,"Extendida:: %s\" ]",aux.mbr_partition_4.part_name);
+                    }
+
+                }else{
+                    fprintf(file," LIBRE\" ]");
+                }
+
+
+                          fprintf(file , "\n}");
+
+                          fprintf(file , "\n}");
+
+
+                fclose(file);
+                char * pbuffer2;
+                char pbuffer[100], buffer2[100], buffer3[200];
+                pbuffer2 = strtok(pathrep,".");
+                strcpy(pbuffer,pbuffer2);
+                snprintf(buffer3,sizeof(buffer3), "dot -Tjpg disk.dot -o %s.jpg -Gcharset=latin1", pbuffer);
+                snprintf(buffer2, sizeof(buffer2), "xdg-open %s.jpg",pbuffer);
+                system(buffer3);
+                system(buffer2);
+                //system("dot -Tpng sistema.dot -o sistema.png -Gcharset=latin1");
+              //  system("xdg-open /home/mario/EDD/Practicav12016/sistema.png");
+
+    }else{
+        printf("la particion de la cual se desea reportar Disk no esta montada\n");
+    }
 }
 
 /****************************************/
